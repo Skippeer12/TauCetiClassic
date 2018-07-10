@@ -14,6 +14,8 @@ var/list/station_departments = list("Command", "Medical", "Engineering", "Scienc
 
 /datum/job/assistant/department = "Civilian"
 
+/datum/job/barber/department = "Civilian"
+
 /datum/job/bartender/department = "Civilian"
 
 /datum/job/chef/department = "Civilian"
@@ -47,7 +49,7 @@ var/list/station_departments = list("Command", "Medical", "Engineering", "Scienc
 
 /datum/job/doctor/department = "Medical"
 
-/datum/job/emergencyphysician/department = "Medical"
+/datum/job/paramedic/department = "Medical"
 
 /datum/job/chemist/department = "Medical"
 

@@ -72,12 +72,6 @@
 #define MONKEY      "Monkey"
 #define GOLEM       "Adamantine Golem"
 
-//Some on_mob_life() procs check for alien races.
-#define IS_DIONA  1
-#define IS_VOX	  2
-#define IS_SKRELL 3
-#define IS_UNATHI 4
-
 #define HUMAN_STRIP_DELAY 40 //takes 40ds = 4s to strip someone.
 
 #define ALIEN_SELECT_AFK_BUFFER 1 // How many minutes that a person can be AFK before not being allowed to be an alien.
@@ -92,9 +86,6 @@
 #define NUTRITION_LEVEL_HUNGRY 250
 #define NUTRITION_LEVEL_STARVING 150
 
-// Factor of how fast mob nutrition decreases
-#define HUNGER_FACTOR 0.05
-
 // How many units of reagent are consumed per tick, by default.
 #define REAGENTS_METABOLISM 0.2
 
@@ -103,7 +94,8 @@
 #define REAGENTS_EFFECT_MULTIPLIER REAGENTS_METABOLISM / 0.4
 
 // Factor of how fast mob nutrition decreases
-#define	HUNGER_FACTOR 0.1
+#define METABOLISM_FACTOR 1 // standart (for humans, other)
+#define SKRELL_METABOLISM_FACTOR 2 // Twice the speed for half the sense!
 
 // Taste sensitivity - the more the more reagents you'll taste
 #define TASTE_SENSITIVITY_NORMAL 1

@@ -199,12 +199,12 @@
 	//Oh, really?
 	if (getBrainLoss() >= 60 && stat != DEAD)
 		if(prob(3))
-			if(config.rus_language)
+			if(config.rus_language)//TODO:CYRILLIC dictionary?
 				switch(pick(1,2,3))
 					if(1)
 						say(pick("азазаа!", "Я не смалгей!", "ХОС ХУЕСОС!", "[pick("", "ебучий трейтор")] [pick("морган", "моргун", "морген", "мрогун")] [pick("джемес", "джамес", "джаемес")] грефонет миня шпасит;е!!!", "ти можыш дать мне [pick("тилипатию","халку","эпиллепсию")]?", "ХАчу стать боргом!", "ПОЗОвите детектива!", "Хочу стать мартышкой!", "ХВАТЕТ ГРИФОНЕТЬ МИНЯ!!!!", "ШАТОЛ!"))
 					if(2)
-						say(pick("Как мин[LETTER_255]ть руки?","ебучие фурри!", "Подебил", "Прокл[LETTER_255]тые трапы!", "лолка!", "вжжжжжжжжж!!!", "джеф скваааад!", "БРАНДЕНБУРГ!", "БУДАПЕШТ!", "ПАУУУУУК!!!!", "ПУКАН БОМБАНУЛ!", "ПУШКА", "РЕВА ПОЦОНЫ", "Пати на хопа!"))
+						say(pick("Как мин[JA_PLACEHOLDER]ть руки?","ебучие фурри!", "Подебил", "Прокл[JA_PLACEHOLDER]тые трапы!", "лолка!", "вжжжжжжжжж!!!", "джеф скваааад!", "БРАНДЕНБУРГ!", "БУДАПЕШТ!", "ПАУУУУУК!!!!", "ПУКАН БОМБАНУЛ!", "ПУШКА", "РЕВА ПОЦОНЫ", "Пати на хопа!"))
 					if(3)
 						emote("drool")
 			else
@@ -628,7 +628,7 @@
 
 		//Body temperature adjusts depending on surrounding atmosphere based on your thermal protection
 		var/temp_adj = 0
-		if(!on_fire) //If you're on fire, you do not heat up or cool down based on surrounding gases
+		if(!on_fire && !(is_type_organ(O_LUNGS, /obj/item/organ/internal/lungs/ipc) && is_bruised_organ(O_LUNGS))) //If you're on fire, you do not heat up or cool down based on surrounding gases. IPC's lungs are the cooling element. If it's broken, IPCs should cool down.
 			if(loc_temp < bodytemperature)			//Place is colder than we are
 				var/thermal_protection = get_cold_protection(loc_temp) //This returns a 0 - 1 value, which corresponds to the percentage of protection based on what you're wearing and what you're exposed to.
 				if(thermal_protection < 1)
@@ -832,7 +832,6 @@
 		if(thermal_protection_flags & ARM_RIGHT)
 			thermal_protection += THERMAL_PROTECTION_ARM_RIGHT
 
-
 	return min(1,thermal_protection)
 
 //See proc/get_heat_protection_flags(temperature) for the description of this proc.
@@ -949,9 +948,9 @@
 /mob/living/carbon/human/proc/handle_chemicals_in_body()
 
 	if(reagents && !species.flags[IS_SYNTHETIC]) //Synths don't process reagents.
-		var/alien = 0
-		if(species && species.reagent_tag)
-			alien = species.reagent_tag
+		var/alien = null
+		if(species)
+			alien = species.name
 		reagents.metabolize(src,alien)
 
 		var/total_phoronloss = 0
@@ -968,17 +967,17 @@
 			var/turf/T = loc
 			light_amount = round((T.get_lumcount()*10)-5)
 
-		nutrition += light_amount
-		traumatic_shock -= light_amount
+		if(is_type_organ(O_LIVER, /obj/item/organ/internal/liver/diona) && !is_bruised_organ(O_LIVER)) // Specie may require light, but only plants, with chlorophyllic plasts can produce nutrition out of light!
+			nutrition += light_amount
 
 		if(species.flags[IS_PLANT])
-			if(nutrition > 500)
-				nutrition = 500
-			if(light_amount >= 3) //if there's enough light, heal
-				adjustBruteLoss(-(light_amount))
-				adjustToxLoss(-(light_amount))
-				adjustOxyLoss(-(light_amount))
-				//TODO: heal wounds, heal broken limbs.
+			if(is_type_organ(O_KIDNEYS, /obj/item/organ/internal/kidneys/diona)) // Diona's kidneys contain all the nutritious elements. Damaging them means they aren't held.
+				var/obj/item/organ/internal/kidneys/KS = organs_by_name[O_KIDNEYS]
+				if(!KS)
+					nutrition = 0
+				else if(nutrition > (500 - KS.damage*5))
+					nutrition = 500 - KS.damage*5
+			species.regen(src, light_amount)
 
 	if(dna && dna.mutantrace == "shadow")
 		var/light_amount = 0
@@ -1033,7 +1032,7 @@
 
 	// nutrition decrease
 	if (nutrition > 0 && stat != DEAD)
-		nutrition = max (0, nutrition - HUNGER_FACTOR)
+		nutrition = max(0, nutrition - metabolism_factor/10)
 
 	if (nutrition > 450)
 		if(overeatduration < 600) //capped so people don't take forever to unfat

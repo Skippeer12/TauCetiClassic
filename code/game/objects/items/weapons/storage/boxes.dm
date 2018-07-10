@@ -25,7 +25,7 @@
  *		 -Mixed replacement lights -Body bags
  *		 -Holobadge -Evidence bag
  *		 -Solution tray -Spare PDAs
- *		 -Shotgun ammo -Hair sprays
+ *		 -Shotgun ammo -Hair dyes
  *
  *		For syndicate call-ins see uplink_kits.dm
  */
@@ -38,11 +38,21 @@
 	item_state = "syringe_kit"
 	foldable = /obj/item/stack/sheet/cardboard	//BubbleWrap
 
-//Survival
+//Survival Humanlike
 /obj/item/weapon/storage/box/survival/atom_init()
 	. = ..()
 	new /obj/item/clothing/mask/breath(src)
 	new /obj/item/weapon/tank/emergency_oxygen(src)
+
+/obj/item/weapon/storage/box/diona_survival/atom_init()
+	. = ..()
+	new /obj/item/device/flashlight/flare(src)
+	new /obj/item/device/plant_analyzer(src)
+
+/obj/item/weapon/storage/box/ipc_survival/atom_init()
+	. = ..()
+	new /obj/item/weapon/stock_parts/cell/crap(src)
+	new /obj/item/device/robotanalyzer(src)
 
 //Engineer
 /obj/item/weapon/storage/box/engineer/atom_init()
@@ -586,19 +596,31 @@
 		new /obj/item/ammo_casing/shotgun/beanbag(src)
 
 //Hair sprays
-/obj/item/weapon/storage/box/hairsprays
-	name = "hair spray box"
-	desc = "A box full of hair sprays."
+/obj/item/weapon/storage/box/hairdyes
+	name = "hair spray dye box"
+	desc = "A box full of hair spray dyes."
 
-/obj/item/weapon/storage/box/hairsprays/atom_init()
+/obj/item/weapon/storage/box/hairdyes/atom_init()
 	. = ..()
-	new /obj/item/weapon/hair_color_spray(src)
-	new /obj/item/weapon/hair_color_spray/black(src)
-	new /obj/item/weapon/hair_color_spray/red(src)
-	new /obj/item/weapon/hair_color_spray/blue(src)
-	new /obj/item/weapon/hair_color_spray/green(src)
-	new /obj/item/weapon/hair_color_spray/brown(src)
-	new /obj/item/weapon/hair_color_spray/blond(src)
+	new /obj/item/weapon/reagent_containers/glass/bottle/hair_dye/white(src)
+	new /obj/item/weapon/reagent_containers/glass/bottle/hair_dye/red(src)
+	new /obj/item/weapon/reagent_containers/glass/bottle/hair_dye/green(src)
+	new /obj/item/weapon/reagent_containers/glass/bottle/hair_dye/blue(src)
+	new /obj/item/weapon/reagent_containers/glass/bottle/hair_dye/black(src)
+	new /obj/item/weapon/reagent_containers/glass/bottle/hair_dye/brown(src)
+	new /obj/item/weapon/reagent_containers/glass/bottle/hair_dye/blond(src)
+
+/obj/item/weapon/storage/box/lipstick
+	name = "lipstick box"
+	desc = "A box full of lipstick."
+
+/obj/item/weapon/storage/box/lipstick/atom_init()
+	. = ..()
+	new /obj/item/weapon/lipstick(src)
+	new /obj/item/weapon/lipstick/purple(src)
+	new /obj/item/weapon/lipstick/jade(src)
+	new /obj/item/weapon/lipstick/black(src)
+	new /obj/item/weapon/paper(src)
 
 // Don't know where is original box itself, so just put it here.
 /obj/item/weapon/storage/box/contraband

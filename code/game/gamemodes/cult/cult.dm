@@ -83,13 +83,16 @@
 	modePlayer += cult
 	if("sacrifice" in objectives)
 		var/list/possible_targets = get_unconvertables()
+		listclearnulls(possible_targets)
 
 		if(!possible_targets.len)
 			for(var/mob/living/carbon/human/player in player_list)
 				if(player.mind && !(player.mind in cult))
 					possible_targets += player.mind
 
-		if(possible_targets.len > 0)
+		listclearnulls(possible_targets)
+
+		if(LAZYLEN(possible_targets))
 			sacrifice_target = pick(possible_targets)
 
 	for(var/datum/mind/cult_mind in cult)
@@ -169,7 +172,7 @@
 		word = pick(cultwords)
 	var/wordexp = "[cultwords[word]] is [word]..."
 	to_chat(cult_mob, "<span class = 'cult'>You remember one thing from the dark teachings of your master... <b>[wordexp]</b></span>")
-	cult_mob.mind.store_memory("<B>You remember that</B> [wordexp]", 0, 0)
+	cult_mob.mind.store_memory("<B>You remember that</B> [wordexp]", 0)
 
 
 /datum/game_mode/proc/add_cultist(datum/mind/cult_mind) //BASE

@@ -819,7 +819,7 @@
 /obj/item/weapon/reagent_containers/food/snacks/ghostburger/atom_init()
 	. = ..()
 	reagents.add_reagent("nutriment", 6)
-	reagents.add_reagent("vitamin", 1)
+	reagents.add_reagent("ectoplasm", 1)
 
 
 /obj/item/weapon/reagent_containers/food/snacks/human
@@ -3039,7 +3039,7 @@
 		if( src.open )
 			return
 
-		var/t = input("Enter what you want to add to the tag:", "Write", null, null) as text
+		var/t = sanitize_safe(input("Enter what you want to add to the tag:", "Write", null, null) as text, MAX_LNAME_LEN)
 
 		var/obj/item/pizzabox/boxtotagto = src
 		if( boxes.len > 0 )
@@ -4331,3 +4331,17 @@
 /obj/item/weapon/reagent_containers/food/snacks/candy/gummyworm/wtf/atom_init()
 	. = ..()
 	reagents.add_reagent("space_drugs", 2)
+
+///////////////////////////////////////////
+// Ectoplasm o.O
+///////////////////////////////////////////
+/obj/item/weapon/reagent_containers/food/snacks/ectoplasm
+	name = "ectoplasm"
+	desc = "Spooky! Do not consume under any circumstances."
+	gender = PLURAL
+	icon = 'icons/obj/wizard.dmi'
+	icon_state = "ectoplasm"
+
+/obj/item/weapon/reagent_containers/food/snacks/ectoplasm/atom_init()
+	. = ..()
+	reagents.add_reagent("ectoplasm", 5)

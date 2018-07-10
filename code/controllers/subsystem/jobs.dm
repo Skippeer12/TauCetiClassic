@@ -361,12 +361,14 @@ var/datum/subsystem/job/SSjob
 					if(G.allowed_roles)
 						for(var/job_name in G.allowed_roles)
 							if(job.title == job_name)
-								permitted = 1
+								permitted = TRUE
+							else if(H.mind.role_alt_title == job_name)
+								permitted = TRUE
 					else
-						permitted = 1
+						permitted = TRUE
 
 					if(G.whitelisted && (G.whitelisted != H.species.name || !is_alien_whitelisted(H, G.whitelisted)))
-						permitted = 0
+						permitted = FALSE
 
 					if(!permitted)
 						to_chat(H, "<span class='warning'>Your current job or whitelist status does not permit you to spawn with [thing]!</span>")
@@ -385,8 +387,16 @@ var/datum/subsystem/job/SSjob
 							custom_equip_leftovers.Add(thing)
 					else
 						spawn_in_storage += thing
+
+		if(H.species)
+			H.species.before_job_equip(H, job)
+
 		job.equip(H)
 		job.apply_fingerprints(H)
+
+		if(H.species)
+			H.species.after_job_equip(H, job)
+
 
 		for(var/thing in custom_equip_leftovers)
 			var/datum/gear/G = gear_datums[thing]
@@ -467,25 +477,6 @@ var/datum/subsystem/job/SSjob
 						var/obj/item/weapon/storage/backpack/satchel/BPK = new(H)
 						new /obj/item/weapon/storage/box/survival(BPK)
 						H.equip_to_slot_or_del(BPK, slot_back,1)
-
-	//TODO: Generalize this by-species
-	if(H.species)
-		if(H.species.name == TAJARAN || H.species.name == UNATHI)
-			H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),slot_shoes,1)
-		else if(H.species.name == VOX)
-			H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath/vox(src), slot_wear_mask)
-			if(!H.r_hand)
-				H.equip_to_slot_or_del(new /obj/item/weapon/tank/nitrogen(src), slot_r_hand)
-				H.internal = H.r_hand
-			else if (!H.l_hand)
-				H.equip_to_slot_or_del(new /obj/item/weapon/tank/nitrogen(src), slot_l_hand)
-				H.internal = H.l_hand
-			H.internals.icon_state = "internal1"
-		if(H.get_species() == DIONA)
-			if (H.backbag == 1)
-				H.equip_to_slot_or_del(new /obj/item/device/flashlight/flare(H), slot_r_hand)
-			else
-				H.equip_to_slot_or_del(new /obj/item/device/flashlight/flare(H), slot_in_backpack)
 
 	//Deferred item spawning.
 	for(var/thing in spawn_in_storage)

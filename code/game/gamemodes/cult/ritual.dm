@@ -268,7 +268,7 @@ var/list/cult_datums = list()
 	[words[9]] is <a href='byond://?src=\ref[src];number=9;action=change'>[words[words[9]]]</A> <A href='byond://?src=\ref[src];number=9;action=clear'>Clear</A><BR>
 	[words[10]] is <a href='byond://?src=\ref[src];number=10;action=change'>[words[words[10]]]</A> <A href='byond://?src=\ref[src];number=10;action=clear'>Clear</A><BR>
 	"}
-	usr << browse("[notedat]", "window=notes")
+	usr << browse("[entity_ja(notedat)]", "window=notes")
 
 /obj/item/weapon/book/tome/attack(mob/living/M, mob/living/user)
 
@@ -292,6 +292,14 @@ var/list/cult_datums = list()
 	M.visible_message("<span class='danger'>[user] beats [M] with the arcane tome!</span>")
 	to_chat(M, "<span class='danger'You feel searing heat inside!</span>")
 
+/obj/item/weapon/book/tome/afterattack(atom/A, mob/user, proximity)
+	if(!proximity)
+		return
+	if(iscultist(user) && A.reagents && A.reagents.has_reagent("water"))
+		var/water2convert = A.reagents.get_reagent_amount("water")
+		A.reagents.del_reagent("water")
+		to_chat(user, "<span class='warning'>You curse [A].</span>")
+		A.reagents.add_reagent("unholywater",water2convert)
 
 /obj/item/weapon/book/tome/attack_self(mob/living/carbon/human/user)
 	if(!istype(user) || !user.canmove || user.stat || user.incapacitated())
@@ -315,7 +323,7 @@ var/list/cult_datums = list()
 		if("Read it")
 			if(usr.get_active_hand() != src)
 				return
-			user << browse("[tomedat]", "window=Arcane Tome")
+			user << browse("[entity_ja(tomedat)]", "window=Arcane Tome")
 			return
 		if("Notes")
 			if(usr.get_active_hand() != src)
@@ -333,7 +341,7 @@ var/list/cult_datums = list()
 			[words[9]] is <a href='byond://?src=\ref[src];number=9;action=change'>[words[words[9]]]</A> <A href='byond://?src=\ref[src];number=9;action=clear'>Clear</A><BR>
 			[words[10]] is <a href='byond://?src=\ref[src];number=10;action=change'>[words[words[10]]]</A> <A href='byond://?src=\ref[src];number=10;action=clear'>Clear</A><BR>
 			"}
-			user << browse("[notedat]", "window=notes")
+			user << browse("[entity_ja(notedat)]", "window=notes")
 			return
 	if(usr.get_active_hand() != src)
 		return

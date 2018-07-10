@@ -32,6 +32,7 @@ var/list/admin_verbs_admin = list(
 	/client/proc/get_whitelist, 			//Whitelist
 	/client/proc/add_to_whitelist,
 	/datum/admins/proc/whitelist_panel,
+	/datum/admins/proc/library_recycle_bin,
 	/client/proc/jumptocoord,			/*we ghost and jump to a coordinate*/
 	/client/proc/Getmob,				/*teleports a mob to our location*/
 	/client/proc/Getkey,				/*teleports a mob with a certain ckey to our location*/
@@ -179,7 +180,6 @@ var/list/admin_verbs_possess = list(
 var/list/admin_verbs_permissions = list(
 	/client/proc/edit_admin_permissions,
 	/client/proc/gsw_add,
-	/client/proc/library_debug_cat,
 	/client/proc/library_debug_remove,
 	/client/proc/library_debug_read
 	)
@@ -199,6 +199,7 @@ var/list/admin_verbs_event = list(
 //verbs which can be hidden - needs work
 var/list/admin_verbs_hideable = list(
 	/client/proc/set_global_ooc,
+	/datum/admins/proc/library_recycle_bin,
 	/client/proc/deadmin_self,
 //	/client/proc/deadchat,
 	/client/proc/toggleprayers,
@@ -617,7 +618,7 @@ var/list/admin_verbs_hideable = list(
 	set name = "Make Sound"
 	set desc = "Display a message to everyone who can hear the target."
 	if(O)
-		var/message = input("What do you want the message to be?", "Make Sound") as text|null
+		var/message = sanitize(input("What do you want the message to be?", "Make Sound") as text|null)
 		if(!message)
 			return
 		for (var/mob/V in hearers(O))
@@ -885,8 +886,8 @@ var/list/admin_verbs_hideable = list(
 		return
 
 	var/mob/winner = input("Who's a winner?", "Achievement Winner") in player_list
-	var/name = input("What will you call your achievement?", "Achievement Winner", "New Achievement")
-	var/desc = input("What description will you give it?", "Achievement Description", "You Win")
+	var/name = sanitize(input("What will you call your achievement?", "Achievement Winner", "New Achievement"))
+	var/desc = sanitize(input("What description will you give it?", "Achievement Description", "You Win"))
 
 	if(istype(winner, /mob/living))
 		achoice = alert("Give our winner his own trophy?","Achievement Trophy", "Confirm","Cancel")
@@ -921,7 +922,7 @@ var/list/admin_verbs_hideable = list(
 	if(!check_rights(R_ADMIN))
 		return
 
-	var/msg = sanitize(copytext(input(usr, "", "Antag OOC") as text, 1, MAX_MESSAGE_LEN))
+	var/msg = sanitize(input(usr, "", "Antag OOC") as text)
 	if(!msg)	return
 
 	var/display_name = src.key
