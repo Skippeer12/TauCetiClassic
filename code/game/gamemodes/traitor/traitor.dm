@@ -7,7 +7,7 @@
 	config_tag = "traitor"
 	role_type = ROLE_TRAITOR
 	restricted_jobs = list("Cyborg")//They are part of the AI if he is traitor so are they, they use to get double chances
-	protected_jobs = list("Internal Affairs Agent", "Security Officer", "Warden", "Detective", "Head of Security", "Captain")//AI", Currently out of the list as malf does not work for shit
+	protected_jobs = list("Security Cadet", "Internal Affairs Agent", "Security Officer", "Warden", "Detective", "Head of Security", "Captain")//AI", Currently out of the list as malf does not work for shit
 	required_players = 1
 	required_enemies = 1
 	required_players_secret = 1
@@ -101,11 +101,17 @@
 			objectives_count--
 
 		switch(rand(1,120))
-			if(1 to 119)
+			if(1 to 60)
 				if (!(locate(/datum/objective/escape) in traitor.objectives))
 					var/datum/objective/escape/escape_objective = new
 					escape_objective.owner = traitor
 					traitor.objectives += escape_objective
+
+			if(61 to 119)
+				if (!(locate(/datum/objective/survive) in traitor.objectives))
+					var/datum/objective/survive/survive_objective = new
+					survive_objective.owner = traitor
+					traitor.objectives += survive_objective
 
 			else
 				if (!(locate(/datum/objective/hijack) in traitor.objectives))
@@ -156,6 +162,13 @@
 		equip_traitor(traitor.current)
 	return
 
+/datum/game_mode/proc/remove_traitor(datum/mind/M)
+	traitors -= M
+	M.special_role = null
+	if(isAI(M.current))
+		var/mob/living/silicon/ai/A = M.current
+		A.set_zeroth_law("")
+		A.show_laws()
 
 /datum/game_mode/traitor/declare_completion()
 	..()
@@ -235,6 +248,11 @@
 						text += "<br>[entry]"
 				else
 					text += "<br>The traitor was a smooth operator this round (did not purchase any uplink items)."
+		text += "<BR><HR>"
+	if(ticker.reconverted_antags.len)
+		for(var/reconverted in ticker.reconverted_antags)
+			text += printplayerwithicon(ticker.reconverted_antags[reconverted])
+			text += "<br> Has been deconverted, and is now a [pick("loyal", "effective", "nominal")] [pick("dog", "pig", "underdog", "servant")] of [pick("corporation", "NanoTrasen")]"
 		text += "<BR><HR>"
 	return text
 
@@ -319,9 +337,9 @@
 	for(var/datum/objective/dehead/D in traitor_mob.mind.objectives)
 		var/obj/item/device/biocan/B = new (traitor_mob.loc)
 		var/list/slots = list (
-		"backpack" = slot_in_backpack,
-		"left hand" = slot_l_hand,
-		"right hand" = slot_r_hand,
+		"backpack" = SLOT_IN_BACKPACK,
+		"left hand" = SLOT_L_HAND,
+		"right hand" = SLOT_R_HAND,
 		)
 		var/where = traitor_mob.equip_in_one_of_slots(B, slots)
 		traitor_mob.update_icons()

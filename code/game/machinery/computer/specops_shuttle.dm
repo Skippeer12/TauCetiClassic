@@ -27,7 +27,7 @@ var/specops_shuttle_timeleft = 0
 	announcer.config(list("Response Team" = 0))
 
 	var/message_tracker[] = list(0,1,2,3,5,10,30,45)//Create a a list with potential time values.
-	var/message = "\"THE SPECIAL OPERATIONS SHUTTLE IS PREPARING TO RETURN\""//Initial message shown.
+	var/message = "THE SPECIAL OPERATIONS SHUTTLE IS PREPARING TO RETURN"//Initial message shown.
 	if(announcer)
 		announcer.autosay(message, "A.L.I.C.E.", "Response Team")
 
@@ -42,9 +42,9 @@ var/specops_shuttle_timeleft = 0
 		if(announcer)
 			var/rounded_time_left = round(specops_shuttle_timeleft)//Round time so that it will report only once, not in fractions.
 			if(rounded_time_left in message_tracker)//If that time is in the list for message announce.
-				message = "\"ALERT: [rounded_time_left] SECOND[(rounded_time_left!=1)?"S":""] REMAIN\""
+				message = "ALERT: [rounded_time_left] SECOND[(rounded_time_left!=1)?"S":""] REMAIN"
 				if(rounded_time_left==0)
-					message = "\"ALERT: TAKEOFF\""
+					message = "ALERT: TAKEOFF"
 				announcer.autosay(message, "A.L.I.C.E.", "Response Team")
 				message_tracker -= rounded_time_left//Remove the number from the list so it won't be called again next cycle.
 				//Should call all the numbers but lag could mean some issues. Oh well. Not much I can do about that.
@@ -99,7 +99,7 @@ var/specops_shuttle_timeleft = 0
 
 	specops_shuttle_at_station = 0
 
-	for(var/obj/machinery/computer/specops_shuttle/S in machines)
+	for(var/obj/machinery/computer/specops_shuttle/S in computer_list)
 		S.specops_shuttle_timereset = world.time + SPECOPS_RETURN_DELAY
 
 	qdel(announcer)
@@ -181,7 +181,7 @@ var/specops_shuttle_timeleft = 0
 		var/mob/M = locate(/mob) in T
 		to_chat(M, "\red You have arrived to [station_name]. Commence operation!")
 
-	for(var/obj/machinery/computer/specops_shuttle/S in machines)
+	for(var/obj/machinery/computer/specops_shuttle/S in computer_list)
 		S.specops_shuttle_timereset = world.time + SPECOPS_RETURN_DELAY
 
 	qdel(announcer)
@@ -189,7 +189,7 @@ var/specops_shuttle_timeleft = 0
 /proc/specops_can_move()
 	if(specops_shuttle_moving_to_station || specops_shuttle_moving_to_centcom)
 		return 0
-	for(var/obj/machinery/computer/specops_shuttle/S in machines)
+	for(var/obj/machinery/computer/specops_shuttle/S in computer_list)
 		if(world.timeofday <= S.specops_shuttle_timereset)
 			return 0
 	return 1
@@ -210,7 +210,7 @@ var/specops_shuttle_timeleft = 0
 			[specops_shuttle_moving_to_station || specops_shuttle_moving_to_centcom ? "\n*The Special Ops. shuttle is already leaving.*<BR>\n<BR>":specops_shuttle_at_station ? "\n<A href='?src=\ref[src];sendtodock=1'>Shuttle standing by...</A><BR>\n<BR>":"\n<A href='?src=\ref[src];sendtostation=1'>Depart to [station_name]</A><BR>\n<BR>"]
 			\n<A href='?src=\ref[user];mach_close=computer'>Close</A>"}
 
-	user << browse(dat, "window=computer;size=575x450")
+	user << browse(entity_ja(dat), "window=computer;size=575x450")
 	onclose(user, "computer")
 
 /obj/machinery/computer/specops_shuttle/Topic(href, href_list)

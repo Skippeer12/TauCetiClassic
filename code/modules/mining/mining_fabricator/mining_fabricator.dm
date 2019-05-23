@@ -97,7 +97,7 @@
 				</table>
 				</body>
 				</html>"}
-	user << browse(dat, "window=mine_fabricator;size=1000x430")
+	user << browse(entity_ja(dat), "window=mine_fabricator;size=1000x430")
 	onclose(user, "mine_fabricator")
 	return
 
@@ -154,7 +154,7 @@
 		return
 
 	if(panel_open)
-		if(istype(W, /obj/item/weapon/crowbar))
+		if(iscrowbar(W))
 			for(var/material in resources)
 				remove_material(material, resources[material]/MINERAL_MATERIAL_AMOUNT)
 			default_deconstruction_crowbar(W)

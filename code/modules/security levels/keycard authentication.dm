@@ -74,11 +74,11 @@
 		dat += "<li><A href='?src=\ref[src];triggerevent=Grant Emergency Maintenance Access'>Grant Emergency Maintenance Access</A></li>"
 		dat += "<li><A href='?src=\ref[src];triggerevent=Revoke Emergency Maintenance Access'>Revoke Emergency Maintenance Access</A></li>"
 		dat += "</ul>"
-		user << browse(dat, "window=keycard_auth;size=500x250")
+		user << browse(entity_ja(dat), "window=keycard_auth;size=500x250")
 	if(screen == 2)
 		dat += "Please swipe your card to authorize the following event: <b>[event]</b>"
 		dat += "<p><A href='?src=\ref[src];reset=1'>Back</A>"
-		user << browse(dat, "window=keycard_auth;size=500x250")
+		user << browse(entity_ja(dat), "window=keycard_auth;size=500x250")
 
 
 /obj/machinery/keycard_auth/Topic(href, href_list)
@@ -174,9 +174,7 @@ var/global/timer_maint_revoke_id = 0
 		maint_all_access_priority = TRUE
 
 	change_maintenance_access(TRUE)
-
-	to_chat(world, "<font size=4 color='red'>Attention!</font>")
-	to_chat(world, "<font color='red'>The maintenance access requirement has been revoked on all airlocks.</font>")
+	captain_announce("The maintenance access requirement has been revoked on all airlocks.")
 
 /proc/revoke_maint_all_access(var/priority = FALSE)
 	if(priority)
@@ -185,9 +183,7 @@ var/global/timer_maint_revoke_id = 0
 		return
 
 	change_maintenance_access(FALSE)
-
-	to_chat(world, "<font size=4 color='red'>Attention!</font>")
-	to_chat(world, "<font color='red'>The maintenance access requirement has been readded on all maintenance airlocks.</font>")
+	captain_announce("The maintenance access requirement has been readded on all maintenance airlocks.")
 
 /proc/change_maintenance_access(allow_state)
 	for(var/area/maintenance/M in all_areas)

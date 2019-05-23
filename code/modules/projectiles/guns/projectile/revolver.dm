@@ -3,7 +3,7 @@
 	name = "revolver"
 	icon_state = "revolver"
 	mag_type = /obj/item/ammo_box/magazine/internal/cylinder
-	fire_sound = 'sound/weapons/guns/revolver_shot.ogg'
+	fire_sound = 'sound/weapons/guns/gunshot_heavy.ogg'
 
 /obj/item/weapon/gun/projectile/revolver/chamber_round()
 	if (chambered || !magazine)
@@ -75,7 +75,7 @@
 	set desc = "Click to rename your gun."
 
 	var/mob/M = usr
-	var/input = stripped_input(M,"What do you want to name the gun?", ,"", MAX_NAME_LEN)
+	var/input = sanitize_safe(input(M,"What do you want to name the gun?"), MAX_NAME_LEN)
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
@@ -84,14 +84,14 @@
 
 /obj/item/weapon/gun/projectile/revolver/detective/attackby(obj/item/A, mob/user)
 	..()
-	if(istype(A, /obj/item/weapon/screwdriver))
+	if(isscrewdriver(A))
 		if(magazine.caliber == "38")
 			to_chat(user, "<span class='notice'>You begin to reinforce the barrel of [src].</span>")
 			if(magazine.ammo_count())
 				afterattack(user, user)	//you know the drill
 				user.visible_message("<span class='danger'>[src] goes off!</span>", "<span class='danger'>[src] goes off in your face!</span>")
 				return
-			if(!user.is_busy() && do_after(user, 30, target = src))
+			if(!user.is_busy() && A.use_tool(src, user, 30, volume = 50))
 				if(magazine.ammo_count())
 					to_chat(user, "<span class='notice'>You can't modify it!</span>")
 					return
@@ -104,7 +104,7 @@
 				afterattack(user, user)	//and again
 				user.visible_message("<span class='danger'>[src] goes off!</span>", "<span class='danger'>[src] goes off in your face!</span>")
 				return
-			if(!user.is_busy() && do_after(user, 30, target = src))
+			if(!user.is_busy() && A.use_tool(src, user, 30, volume = 50))
 				if(magazine.ammo_count())
 					to_chat(user, "<span class='notice'>You can't modify it!</span>")
 					return
@@ -242,8 +242,8 @@
 
 /obj/item/weapon/gun/projectile/revolver/doublebarrel/dungeon/sawn_off
 	icon_state = "sawnshotgun"
-	w_class = 3.0
-	slot_flags = SLOT_BELT
+	w_class = ITEM_SIZE_NORMAL
+	slot_flags = SLOT_FLAGS_BELT
 	name = "sawn-off shotgun"
 	desc = "Omar's coming!"
 	short = 1

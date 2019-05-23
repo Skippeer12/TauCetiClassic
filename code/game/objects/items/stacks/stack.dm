@@ -11,6 +11,7 @@
 /obj/item/stack
 	gender = PLURAL
 	origin_tech = "materials=1"
+	usesound = 'sound/items/Deconstruct.ogg'
 
 	var/list/datum/stack_recipe/recipes
 	var/singular_name
@@ -133,7 +134,7 @@
 					t1 += " <A href='?src=\ref[src];make=[i];multiplier=[max_multiplier]'>[max_multiplier*R.res_amount]x</A>"
 
 	t1 += "</TT></body></HTML>"
-	user << browse(t1, "window=stack")
+	user << browse(entity_ja(t1), "window=stack")
 	onclose(user, "stack")
 	return
 
@@ -167,7 +168,8 @@
 			usr << browse(null, "window=stack")
 			return
 		if (R.time)
-			if(usr.is_busy()) return
+			if(usr.is_busy())
+				return
 			to_chat(usr, "\blue Building [R.title] ...")
 			if (!do_after(usr, R.time, target = usr))
 				return
@@ -195,7 +197,7 @@
 /obj/item/stack/proc/is_cyborg()
 	return istype(loc, /obj/item/weapon/robot_module) || istype(loc, /mob/living/silicon)
 
-/obj/item/stack/proc/use(used, transfer = FALSE)
+/obj/item/stack/use(used, transfer = FALSE)
 	if(zero_amount())
 		return FALSE
 	if(amount < used)
@@ -206,6 +208,20 @@
 	if(!zero_amount())
 		update_weight()
 		update_icon()
+
+	return TRUE
+
+/obj/item/stack/tool_use_check(mob/living/user, amount)
+	if(get_amount() < amount)
+		if(singular_name)
+			if(amount > 1)
+				to_chat(user, "<span class='warning'>You need at least [amount] [singular_name]\s to do this!</span>")
+			else
+				to_chat(user, "<span class='warning'>You need at least [amount] [singular_name] to do this!</span>")
+		else
+			to_chat(user, "<span class='warning'>You need at least [amount] to do this!</span>")
+
+		return FALSE
 
 	return TRUE
 
@@ -243,11 +259,15 @@
 	if(QDELETED(S) || QDELETED(src) || S == src) //amusingly this can cause a stack to consume itself, let's not allow that.
 		return
 	var/transfer = get_amount()
+	var/old_loc = loc
 	transfer = min(transfer, S.max_amount - S.amount)
 	if(pulledby)
 		pulledby.start_pulling(S)
 	S.copy_evidences(src)
 	use(transfer, TRUE)
+	if (istype(old_loc, /obj/item/weapon/storage) && amount < 1 && !is_cyborg())
+		var/obj/item/weapon/storage/s = old_loc
+		s.update_ui_after_item_removal()
 	S.add(transfer)
 
 /obj/item/stack/attack_hand(mob/user)

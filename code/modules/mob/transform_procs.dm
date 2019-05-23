@@ -47,6 +47,8 @@
 	if(mind)
 		mind.transfer_to(O)
 
+	transfer_trait_datums(O)
+
 	to_chat(O, "<B>You are now [O]. </B>")
 
 	spawn(0)//To prevent the proc from returning null.
@@ -80,7 +82,7 @@
 
 /mob/proc/AIize(move=1)
 	if(client)
-		src << sound(null, repeat = 0, wait = 0, volume = 85, channel = 1) // stop the jams for AIs
+		send_sound(src, null, 85, CHANNEL_LOBBY_MUSIC) // stop the jams for AIs
 	var/mob/living/silicon/ai/O = new (loc, base_law_type,,1)//No MMI but safety is in effect.
 	O.invisibility = 0
 	O.aiRestorePowerRoutine = 0
@@ -184,9 +186,8 @@
 
 	O.Namepick()
 
-	spawn(0)//To prevent the proc from returning null.
-		qdel(src)
-	return O
+	. = O
+	qdel(src)
 
 //human -> alien
 /mob/living/carbon/human/proc/Alienize()

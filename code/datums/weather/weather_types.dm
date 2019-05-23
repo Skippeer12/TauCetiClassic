@@ -154,7 +154,6 @@
 	weather_color = "green"
 	weather_overlay = "ash_storm"
 	weather_alpha = 40
-	weather_sound = 'sound/AI/radiation.ogg'
 	overlay_layer = 2.1
 	end_duration = 100
 	end_message = "<span class='notice'>The air seems to be cooling off again.</span>"
@@ -175,7 +174,7 @@
 	if(prob(40))
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			if(H.dna && H.dna.species)
+			if(H.dna && H.dna.species && !H.species.flags[IS_SYNTHETIC])
 				if(prob(max(0,100-resist)) && prob(10))
 					if (prob(75))
 						randmutb(H) // Applies bad mutation
@@ -187,7 +186,7 @@
 /datum/weather/rad_storm/end()
 	if(..())
 		return
-	command_alert("The station has passed the radiation belt. Please report to medbay if you experience any unusual symptoms. Maintenance will lose all access again shortly.", "Anomaly Alert")
+	command_alert("The station has passed the radiation belt. Please report to medbay if you experience any unusual symptoms. Maintenance will lose all access again shortly.", "Anomaly Alert", "radpassed")
 	if(timer_maint_revoke_id)
 		deltimer(timer_maint_revoke_id)
 		timer_maint_revoke_id = 0
@@ -241,7 +240,7 @@
 
 
 /datum/weather/acid_rain/impact(mob/living/L)
-	if(!istype(/turf/, L.loc))
+	if(!istype(/turf, L.loc))
 		return
 	L.water_act(5)
 	if(!prob(L.getarmor(null, "bio")))

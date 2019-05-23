@@ -9,7 +9,7 @@
 	. += 				"<tr><td>Alpha(transparency): <a href='?_src_=prefs;preference=UIalpha'><b>[UI_style_alpha]</b></a></td></tr>"
 	. += 				"<tr><td colspan='3'><a href='?_src_=prefs;task=reset'>Reset custom UI</a></td></tr>"
 	if(config.allow_Metadata)
-		. +=			"<tr><td><br><b>OOC Notes: </b><a href='?_src_=prefs;preference=metadata;task=input'>[length(metadata)>0?"[sanitize_popup(copytext(metadata, 1, 3))]...":"\[...\]"]</a></td></tr>"
+		. +=			"<tr><td><br><b>OOC Notes: </b><a href='?_src_=prefs;preference=metadata;task=input'>[length(metadata)>0?"[copytext(metadata, 1, 3)]...":"\[...\]"]</a></td></tr>"
 	//if(user.client) TG
 	//	if(user.client.holder)
 	//		. += "<b>Adminhelp Sound:</b> <a href='?_src_=prefs;preference=hear_adminhelps'>[(toggles & SOUND_ADMINHELP)?"On":"Off"]</a><br>"
@@ -77,7 +77,13 @@
 			. += "Disabled"
 		else
 			. += "High"
-	. += 					"</a></td>"
+	. += 					"</a></b></td>"
+	. += 				"</tr>"
+	. += 				"<tr>"
+	. += 					"<td width='45%'>Ambient Occlusion:</td>"
+	. += 					"<td><a href='?_src_=prefs;preference=ambientocclusion'><b>[ambientocclusion ? "Enabled" : "Disabled"]</b></a></td>"
+	. += 					"<td width='45%'>Parallax theme:</td>"
+	. += 					"<td><a href='?_src_=prefs;preference=parallax_theme'><b>[parallax_theme]</b></a></td>"
 	. += 				"</tr>"
 	. += 				"<tr>"
 	. += 					"<td width='45%'>Melee Animations:</td>"
@@ -96,9 +102,9 @@
 	switch(href_list["task"])
 		if("input")
 			if(href_list["preference"] == "metadata")
-				var/new_metadata = input(user, "Enter any OOC information you'd like others to see:", "Game Preference" , html_decode(revert_ja(metadata)))  as message|null
-				if(!isnull(new_metadata))
-					metadata = sanitize(copytext(new_metadata,1,MAX_MESSAGE_LEN))
+				var/new_metadata = sanitize(input(user, "Enter any OOC information you'd like others to see:", "Game Preference", input_default(metadata)) as message|null)
+				if(new_metadata)
+					metadata = new_metadata
 
 			//if(href_list["preference"] == "ghostorbit")
 			//	if(unlock_content)
@@ -145,15 +151,28 @@
 			if (parent && parent.mob && parent.mob.hud_used)
 				parent.mob.hud_used.update_parallax_pref()
 
+		if("ambientocclusion")
+			ambientocclusion = !ambientocclusion
+			if(parent && parent.screen && parent.screen.len)
+				var/obj/screen/plane_master/game_world/PM = locate(/obj/screen/plane_master/game_world) in parent.screen
+				PM.backdrop(parent.mob)
+
+		if("parallax_theme")
+			switch(parallax_theme)
+				if(PARALLAX_THEME_CLASSIC)
+					parallax_theme = PARALLAX_THEME_TG
+				if(PARALLAX_THEME_TG)
+					parallax_theme = PARALLAX_THEME_CLASSIC
+
 		if("hear_midis")
 			toggles ^= SOUND_MIDI
 
 		if("lobby_music")
 			toggles ^= SOUND_LOBBY
 			if(toggles & SOUND_LOBBY)
-				user << sound(ticker.login_music, repeat = 0, wait = 0, volume = 85, channel = 1)
+				send_sound(user, ticker.login_music, 85, CHANNEL_LOBBY_MUSIC)
 			else
-				user << sound(null, repeat = 0, wait = 0, volume = 85, channel = 1)
+				send_sound(user, null,  85, CHANNEL_LOBBY_MUSIC)
 
 		if("hear_ambience")
 			toggles ^= SOUND_AMBIENCE

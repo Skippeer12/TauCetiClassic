@@ -1,7 +1,7 @@
 /obj/machinery/biogenerator
 	name = "Biogenerator"
 	desc = ""
-	icon = 'icons/obj/biogenerator.dmi'
+	icon = 'icons/obj/machines/biogenerator.dmi'
 	icon_state = "biogen-empty"
 	density = 1
 	anchored = 1
@@ -25,7 +25,7 @@
 	component_parts += new /obj/item/weapon/stock_parts/matter_bin(null)
 	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
 	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/stack/cable_coil/random(null, 1)
+	component_parts += new /obj/item/stack/cable_coil/red(null, 1)
 	RefreshParts()
 
 /obj/machinery/biogenerator/RefreshParts()
@@ -184,7 +184,7 @@
 		processing = 1
 		update_icon()
 		updateUsrDialog()
-		playsound(src, 'sound/machines/blender.ogg', 50, 1)
+		playsound(src, 'sound/machines/blender.ogg', 35, 1)
 		use_power(S*30)
 		sleep(S+15/productivity)
 		processing = 0

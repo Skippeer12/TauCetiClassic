@@ -20,10 +20,10 @@
 	name = "cult"
 	config_tag = "cult"
 	role_type = ROLE_CULTIST
-	restricted_jobs = list("Chaplain","AI", "Cyborg", "Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Internal Affairs Agent")
+	restricted_jobs = list("Security Cadet", "Chaplain","AI", "Cyborg", "Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Internal Affairs Agent")
 	protected_jobs = list()
 	required_players = 5
-	required_players_secret = 15
+	required_players_secret = 20
 
 	required_enemies = 3
 	recommended_enemies = 4
@@ -83,13 +83,16 @@
 	modePlayer += cult
 	if("sacrifice" in objectives)
 		var/list/possible_targets = get_unconvertables()
+		listclearnulls(possible_targets)
 
 		if(!possible_targets.len)
 			for(var/mob/living/carbon/human/player in player_list)
 				if(player.mind && !(player.mind in cult))
 					possible_targets += player.mind
 
-		if(possible_targets.len > 0)
+		listclearnulls(possible_targets)
+
+		if(LAZYLEN(possible_targets))
 			sacrifice_target = pick(possible_targets)
 
 	for(var/datum/mind/cult_mind in cult)
@@ -99,7 +102,7 @@
 		if(!config.objectives_disabled)
 			memoize_cult_objectives(cult_mind)
 		else
-			to_chat(cult_mind.current, "<span class ='blue'>Within the rules,</span> try to act as an opposing force to the crew. Further RP and try to make sure other players have </i>fun<i>! If you are confused or at a loss, always adminhelp, and before taking extreme actions, please try to also contact the administration! Think through your actions and make the roleplay immersive! <b>Please remember all rules aside from those without explicit exceptions apply to antagonists.</i></b>")
+			to_chat(cult_mind.current, "<span class ='blue'>Within the rules,</span> try to act as an opposing force to the crew. Further RP and try to make sure other players have fun<i>! If you are confused or at a loss, always adminhelp, and before taking extreme actions, please try to also contact the administration! Think through your actions and make the roleplay immersive! <b>Please remember all rules aside from those without explicit exceptions apply to antagonists.</i></b>")
 		cult_mind.special_role = "Cultist"
 	update_all_cult_icons()
 
@@ -137,11 +140,11 @@
 
 	var/obj/item/weapon/paper/talisman/supply/T = new(mob)
 	var/list/slots = list (
-		"backpack" = slot_in_backpack,
-		"left pocket" = slot_l_store,
-		"right pocket" = slot_r_store,
-		"left hand" = slot_l_hand,
-		"right hand" = slot_r_hand,
+		"backpack" = SLOT_IN_BACKPACK,
+		"left pocket" = SLOT_L_STORE,
+		"right pocket" = SLOT_R_STORE,
+		"left hand" = SLOT_L_HAND,
+		"right hand" = SLOT_R_HAND,
 	)
 	var/where = mob.equip_in_one_of_slots(T, slots)
 	if (!where)
@@ -169,7 +172,7 @@
 		word = pick(cultwords)
 	var/wordexp = "[cultwords[word]] is [word]..."
 	to_chat(cult_mob, "<span class = 'cult'>You remember one thing from the dark teachings of your master... <b>[wordexp]</b></span>")
-	cult_mob.mind.store_memory("<B>You remember that</B> [wordexp]", 0, 0)
+	cult_mob.mind.store_memory("<B>You remember that</B> [wordexp]", 0)
 
 
 /datum/game_mode/proc/add_cultist(datum/mind/cult_mind) //BASE
@@ -243,7 +246,7 @@
 
 /datum/game_mode/cult/proc/get_unconvertables()
 	var/list/ucs = list()
-	for(var/mob/living/carbon/human/player in mob_list)
+	for(var/mob/living/carbon/human/player in human_list)
 		if(!is_convertable_to_cult(player.mind))
 			ucs += player.mind
 	return ucs

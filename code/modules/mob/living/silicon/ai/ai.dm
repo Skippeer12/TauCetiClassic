@@ -1,7 +1,6 @@
 #define AI_CHECK_WIRELESS 1
 #define AI_CHECK_RADIO 2
 
-var/list/ai_list = list()
 var/list/ai_verbs_default = list(
 //	/mob/living/silicon/ai/proc/ai_recall_shuttle,
 	/mob/living/silicon/ai/proc/ai_goto_location,
@@ -99,7 +98,7 @@ var/list/ai_verbs_default = list(
 	var/pickedName = null
 	while(!pickedName)
 		pickedName = pick(ai_names)
-		for (var/mob/living/silicon/ai/A in mob_list)
+		for (var/mob/living/silicon/ai/A in ai_list)
 			if (A.real_name == pickedName && possibleNames.len > 1) //fixing the theoretically possible infinite loop
 				possibleNames -= pickedName
 				pickedName = null
@@ -139,6 +138,7 @@ var/list/ai_verbs_default = list(
 	add_language("Skrellian", 0)
 	add_language("Rootspeak", 0)
 	add_language("Tradeband", 1)
+	add_language("Trinary", 1)
 	add_language("Gutter", 0)
 
 	if(!safety) // Only used by AIize() to successfully spawn an AI.
@@ -326,7 +326,7 @@ var/list/ai_verbs_default = list(
 		dat += "<BR>\n"
 
 	viewalerts = 1
-	src << browse(dat, "window=aialerts&can_close=0")
+	src << browse(entity_ja(dat), "window=aialerts&can_close=0")
 
 /mob/living/silicon/ai/var/message_cooldown = 0
 /mob/living/silicon/ai/proc/ai_announcement()
@@ -337,14 +337,14 @@ var/list/ai_verbs_default = list(
 	if(message_cooldown)
 		to_chat(src, "Please allow one minute to pass between announcements.")
 		return
-	var/input = stripped_input(usr, "Please write a message to announce to the station crew.", "A.I. Announcement")
+	var/input = sanitize(input(usr, "Please write a message to announce to the station crew.", "A.I. Announcement") as null|message)
 	if(!input)
 		return
 
 	if(check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
 		return
 
-	captain_announce(input, "A.I. Announcement", src.name)
+	captain_announce(input, "A.I. Announcement", src.name, "aiannounce")
 	log_say("[key_name(usr)] has made an AI announcement: [input]")
 	message_admins("[key_name_admin(usr)] has made an AI announcement.")
 	message_cooldown = 1
@@ -366,7 +366,7 @@ var/list/ai_verbs_default = list(
 
 	// hack to display shuttle timer
 	if(SSshuttle.online)
-		var/obj/machinery/computer/communications/C = locate() in machines
+		var/obj/machinery/computer/communications/C = locate() in communications_list
 		if(C)
 			C.post_status("shuttle")
 
@@ -500,7 +500,7 @@ var/list/ai_verbs_default = list(
 		statelaws()
 
 	if (href_list["track"])
-		var/mob/target = locate(href_list["track"]) in mob_list
+		var/mob/target = locate(href_list["track"]) in living_list
 		if(target && (!istype(target, /mob/living/carbon/human) || html_decode(href_list["trackname"]) == target:get_face_name()))
 			ai_actual_track(target)
 		else
@@ -508,8 +508,8 @@ var/list/ai_verbs_default = list(
 			return
 
 	else if (href_list["faketrack"])
-		var/mob/target = locate(href_list["track"]) in mob_list
-		var/mob/living/silicon/ai/A = locate(href_list["track2"]) in mob_list
+		var/mob/target = locate(href_list["track"]) in living_list
+		var/mob/living/silicon/ai/A = locate(href_list["track2"]) in ai_list
 		if(A && target)
 
 			A.cameraFollow = target
@@ -837,11 +837,11 @@ var/list/ai_verbs_default = list(
 
 
 /mob/living/silicon/ai/attackby(obj/item/weapon/W, mob/user)
-	if(istype(W, /obj/item/weapon/wrench))
+	if(iswrench(W))
 		if(user.is_busy()) return
 		if(anchored)
 			user.visible_message("\blue \The [user] starts to unbolt \the [src] from the plating...")
-			if(!do_after(user,40,target = src))
+			if(!W.use_tool(src, user, 40, volume = 50))
 				user.visible_message("\blue \The [user] decides not to unbolt \the [src].")
 				return
 			user.visible_message("\blue \The [user] finishes unfastening \the [src]!")
@@ -849,7 +849,7 @@ var/list/ai_verbs_default = list(
 			return
 		else
 			user.visible_message("\blue \The [user] starts to bolt \the [src] to the plating...")
-			if(!do_after(user,40,target = src))
+			if(!W.use_tool(src, user, 40, volume = 50))
 				user.visible_message("\blue \The [user] decides not to bolt \the [src].")
 				return
 			user.visible_message("\blue \The [user] finishes fastening down \the [src]!")

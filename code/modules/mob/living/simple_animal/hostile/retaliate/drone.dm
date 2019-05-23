@@ -21,7 +21,7 @@
 	maxHealth = 300
 	speed = 8
 	projectiletype = /obj/item/projectile/beam/drone
-	projectilesound = 'sound/weapons/laser3.ogg'
+	projectilesound = 'sound/weapons/guns/gunpulse_laser3.ogg'
 	destroy_surroundings = 0
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
@@ -49,11 +49,13 @@
 	var/has_loot = 1
 	faction = "malf_drone"
 
+	animalistic = FALSE
+
 /mob/living/simple_animal/hostile/retaliate/malf_drone/atom_init()
 	. = ..()
 	if(prob(5))
 		projectiletype = /obj/item/projectile/beam/pulse/drone
-		projectilesound = 'sound/weapons/pulse2.ogg'
+		projectilesound = 'sound/weapons/guns/gunpulse2.ogg'
 	ion_trail = new
 	ion_trail.set_up(src)
 	ion_trail.start()

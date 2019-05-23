@@ -199,6 +199,11 @@
 	spell_type = /obj/effect/proc_holder/spell/targeted/barnyardcurse
 	log_name = "BC"
 
+/datum/spellbook_entry/gnomecurse
+	name = "Gift of the Gnome"
+	spell_type = /obj/effect/proc_holder/spell/targeted/gnomecurse
+	log_name = "GC"
+
 /datum/spellbook_entry/lighting_shock
 	name = "Lighting Shock"
 	spell_type = /obj/effect/proc_holder/spell/targeted/lighting_shock
@@ -368,7 +373,7 @@
 /obj/item/weapon/spellbook
 	name = "spell book"
 	desc = "An unearthly tome that glows with power."
-	w_class = 2
+	w_class = ITEM_SIZE_SMALL
 	icon = 'icons/obj/library.dmi'
 	icon_state ="book"
 	var/uses = 10
@@ -494,7 +499,7 @@
 		dat += cat_dat[category]
 		dat += "</div>"
 
-	user << browse(wrap(dat), "window=spellbook;size=700x500")
+	user << browse(wrap(entity_ja(dat)), "window=spellbook;size=700x500")
 	onclose(user, "spellbook")
 	return
 

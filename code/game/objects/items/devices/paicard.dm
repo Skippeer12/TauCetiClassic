@@ -3,8 +3,8 @@
 	icon = 'icons/obj/pda.dmi'
 	icon_state = "pai"
 	item_state = "electronic"
-	w_class = 2.0
-	slot_flags = SLOT_BELT
+	w_class = ITEM_SIZE_SMALL
+	slot_flags = SLOT_FLAGS_BELT
 	origin_tech = "programming=2"
 	var/obj/item/device/radio/radio
 	var/looking_for_personality = 0
@@ -12,9 +12,11 @@
 
 /obj/item/device/paicard/atom_init()
 	. = ..()
+	paicard_list += src
 	overlays += "pai-off"
 
 /obj/item/device/paicard/Destroy()
+	paicard_list -= src
 	//Will stop people throwing friend pAIs into the singularity so they can respawn
 	if(!isnull(pai))
 		pai.death(0)
@@ -161,19 +163,19 @@
 				<table class="request">
 					<tr>
 						<td class="radio">Transmit:</td>
-						<td><a href='byond://?src=\ref[src];wires=4'>[(radio.wires & 4) ? "<font color=#55FF55>En" : "<font color=#FF5555>Dis" ]abled</font></a>
+						<td><a href='byond://?src=\ref[src];wires=4'>[(radio.wires & 4) ? "<font color=#55FF55>Enabled</font>" : "<font color=#FF5555>Disabled</font>" ]</a>
 
 						</td>
 					</tr>
 					<tr>
 						<td class="radio">Receive:</td>
-						<td><a href='byond://?src=\ref[src];wires=2'>[(radio.wires & 2) ? "<font color=#55FF55>En" : "<font color=#FF5555>Dis" ]abled</font></a>
+						<td><a href='byond://?src=\ref[src];wires=2'>[(radio.wires & 2) ? "<font color=#55FF55>Enabled</font>" : "<font color=#FF5555>Disabled</font>" ]</a>
 
 						</td>
 					</tr>
 					<tr>
 						<td class="radio">Signal Pulser:</td>
-						<td><a href='byond://?src=\ref[src];wires=1'>[(radio.wires & 1) ? "<font color=#55FF55>En" : "<font color=#FF5555>Dis" ]abled</font></a>
+						<td><a href='byond://?src=\ref[src];wires=1'>[(radio.wires & 1) ? "<font color=#55FF55>Enabled</font>" : "<font color=#FF5555>Disabled</font>" ]</a>
 
 						</td>
 					</tr>
@@ -218,7 +220,7 @@
 				<br>
 				<p>Each time this button is pressed, a request will be sent out to any available personalities. Check back often give plenty of time for personalities to respond. This process could take anywhere from 15 seconds to several minutes, depending on the available personalities' timeliness.</p>
 			"}
-	user << browse(dat, "window=paicard")
+	user << browse(entity_ja(dat), "window=paicard")
 	onclose(user, "paicard")
 	return
 
@@ -258,12 +260,12 @@
 		else
 			radio.wires |= t1
 	if(href_list["setlaws"])
-		var/newlaws = sanitize_alt(copytext(input("Enter any additional directives you would like your pAI personality to follow. Note that these directives will not override the personality's allegiance to its imprinted master. Conflicting directives will be ignored.", "pAI Directive Configuration", revert_ja(pai.pai_laws)) as message,1,MAX_MESSAGE_LEN))
+		var/newlaws = sanitize(input("Enter any additional directives you would like your pAI personality to follow. Note that these directives will not override the personality's allegiance to its imprinted master. Conflicting directives will be ignored.", "pAI Directive Configuration", input_default(pai.pai_laws)) as message)
 		if(newlaws)
 			pai.pai_laws = newlaws
 			to_chat(pai, "Your supplemental directives have been updated. Your new directives are:")
-			to_chat(pai, "Prime Directive: <br>[sanitize_chat(pai.pai_law0)]")
-			to_chat(pai, "Supplemental Directives: <br>[sanitize_chat(pai.pai_laws)]")
+			to_chat(pai, "Prime Directive: <br>[pai.pai_law0]")
+			to_chat(pai, "Supplemental Directives: <br>[pai.pai_laws]")
 	attack_self(usr)
 
 // 		WIRE_SIGNAL = 1

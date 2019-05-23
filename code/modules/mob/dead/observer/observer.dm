@@ -86,7 +86,10 @@ var/global/list/image/ghost_sightless_images = list() //this is a list of images
 
 	. = ..()
 
+	observer_list += src
+
 /mob/dead/observer/Destroy()
+	observer_list -= src
 	if (ghostimage)
 		ghost_darkness_images -= ghostimage
 		qdel(ghostimage)
@@ -240,8 +243,9 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	return
 
 
-/mob/dead/observer/Move(NewLoc, direct)
-	dir = direct
+/mob/dead/observer/Move(NewLoc, Dir = 0, step_x = 0, step_y = 0)
+	. = TRUE
+	dir = Dir
 	if(NewLoc)
 		loc = NewLoc
 		for(var/obj/effect/step_trigger/S in NewLoc)
@@ -249,13 +253,13 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		update_parallax_contents()
 		return
 	loc = get_turf(src) //Get out of closets and such as a ghost
-	if((direct & NORTH) && y < world.maxy)
+	if((Dir & NORTH) && y < world.maxy)
 		y++
-	else if((direct & SOUTH) && y > 1)
+	else if((Dir & SOUTH) && y > 1)
 		y--
-	if((direct & EAST) && x < world.maxx)
+	if((Dir & EAST) && x < world.maxx)
 		x++
-	else if((direct & WEST) && x > 1)
+	else if((Dir & WEST) && x > 1)
 		x--
 
 	for(var/obj/effect/step_trigger/S in locate(x, y, z))	//<-- this is dumb
@@ -535,7 +539,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		return
 
 	var/mob/living/carbon/ian/phoron_dog
-	for(var/mob/living/carbon/ian/IAN in living_mob_list) // Incase there is multi_ians, what should NOT ever happen normally!
+	for(var/mob/living/carbon/ian/IAN in alive_mob_list) // Incase there is multi_ians, what should NOT ever happen normally!
 		if(IAN.mind) // Mind means someone was or is in a body.
 			continue
 		phoron_dog = IAN
@@ -555,7 +559,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	dat += "<h4>Crew Manifest</h4>"
 	dat += data_core.get_manifest()
 
-	src << browse(dat, "window=manifest;size=370x420;can_close=1")
+	src << browse(entity_ja(dat), "window=manifest;size=370x420;can_close=1")
 
 //Used for drawing on walls with blood puddles as a spooky ghost.
 /mob/dead/observer/verb/bloody_doodle()
@@ -607,7 +611,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(!choice || choice.amount == 0 || !(src.Adjacent(choice)))
 		return
 
-	var/doodle_color = (choice.basecolor) ? choice.basecolor : "#A10808"
+	var/datum/dirt_cover/doodle_color = new/datum/dirt_cover(choice.basedatum)
 
 	var/num_doodles = 0
 	for (var/obj/effect/decal/cleanable/blood/writing/W in T)
@@ -618,16 +622,16 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	var/max_length = 50
 
-	var/message = stripped_input(src,"Write a message. It cannot be longer than [max_length] characters.","Blood writing", "")
+	var/message = sanitize_safe(input(src,"Write a message. It cannot be longer than [max_length] characters.","Blood writing", ""))
 
 	if (message)
 
 		if (length(message) > max_length)
-			message += "-"
+			message += "-"//Should crop any letters? No?
 			to_chat(src, "<span class='warning'>You ran out of blood to write with!</span>")
 
 		var/obj/effect/decal/cleanable/blood/writing/W = new(T)
-		W.basecolor = doodle_color
+		W.basedatum = new/datum/dirt_cover(doodle_color)
 		W.update_icon()
 		W.message = message
 		W.add_hiddenprint(src)

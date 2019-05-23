@@ -50,7 +50,7 @@ var/can_call_ert
 			to_chat(usr, "An emergency response team has already been sent.")
 			return */
 		if(jobban_isbanned(usr, "Syndicate") || jobban_isbanned(usr, ROLE_ERT) || jobban_isbanned(usr, "Security Officer"))
-			to_chat(usr, "<font color=red><b>You are jobbanned from the emergency reponse team!")
+			to_chat(usr, "<span class='danger'>You are jobbanned from the emergency reponse team!</span>")
 			return
 
 		var/available_in_minutes = role_available_in_minutes(usr, ROLE_ERT)
@@ -64,7 +64,7 @@ var/can_call_ert
 
 		for (var/obj/effect/landmark/L in landmarks_list) if (L.name == "Commando")
 			L.name = null//Reserving the place.
-			var/new_name = input(usr, "Pick a name","Name") as null|text
+			var/new_name = sanitize_safe(input(usr, "Pick a name","Name") as null|text, MAX_LNAME_LEN)
 			if(!new_name)//Somebody changed his mind, place is available again.
 				L.name = "Commando"
 				return
@@ -76,11 +76,11 @@ var/can_call_ert
 			create_random_account_and_store_in_mind(new_commando)
 
 			to_chat(new_commando, "\blue You are [!leader_selected?"a member":"the <B>LEADER</B>"] of an Emergency Response Team, a type of military division, under CentComm's service. There is a code red alert on [station_name()], you are tasked to go and fix the problem.")
-			to_chat(new_commando, "<b>You should first gear up and discuss a plan with your team. More members may be joining, don't move out before you're ready.")
+			to_chat(new_commando, "<b>You should first gear up and discuss a plan with your team. More members may be joining, don't move out before you're ready.</b>")
 			if(!leader_selected)
 				to_chat(new_commando, "<b>As member of the Emergency Response Team, you answer only to your leader and CentComm officials.</b>")
 			else
-				to_chat(new_commando, "<b>As leader of the Emergency Response Team, you answer only to CentComm, and have authority to override the Captain where it is necessary to achieve your mission goals. It is recommended that you attempt to cooperate with the captain where possible, however.")
+				to_chat(new_commando, "<b>As leader of the Emergency Response Team, you answer only to CentComm, and have authority to override the Captain where it is necessary to achieve your mission goals. It is recommended that you attempt to cooperate with the captain where possible, however.</b>")
 			return
 
 	else
@@ -90,7 +90,7 @@ var/can_call_ert
 /proc/percentage_dead()
 	var/total = 0
 	var/deadcount = 0
-	for(var/mob/living/carbon/human/H in mob_list)
+	for(var/mob/living/carbon/human/H in human_list)
 		if(H.client) // Monkeys and mice don't have a client, amirite?
 			if(H.stat == DEAD) deadcount++
 			total++
@@ -102,7 +102,7 @@ var/can_call_ert
 /proc/percentage_antagonists()
 	var/total = 0
 	var/antagonists = 0
-	for(var/mob/living/carbon/human/H in mob_list)
+	for(var/mob/living/carbon/human/H in human_list)
 		if(is_special_character(H) >= 1)
 			antagonists++
 		total++
@@ -140,12 +140,11 @@ var/can_call_ert
 
 	// there's only a certain chance a team will be sent
 	if(!prob(send_team_chance))
-		command_alert("It would appear that an emergency response team was requested for [station_name()]. Unfortunately, we were unable to send one at this time.", "Central Command")
+		command_alert("It would appear that an emergency response team was requested for [station_name()]. Unfortunately, we were unable to send one at this time.", "Central Command", "noert")
 		can_call_ert = 0 // Only one call per round, ladies.
 		return
 
-	command_alert("It would appear that an emergency response team was requested for [station_name()]. We will prepare and send one as soon as possible.", "Central Command")
-
+	command_alert("It would appear that an emergency response team was requested for [station_name()]. We will prepare and send one as soon as possible.", "Central Command", "yesert")
 	can_call_ert = 0 // Only one call per round, gentleman.
 	send_emergency_team = 1
 
@@ -237,13 +236,13 @@ var/can_call_ert
 /mob/living/carbon/human/proc/equip_strike_team(leader_selected = 0)
 
 	//Special radio setup
-	equip_to_slot_or_del(new /obj/item/device/radio/headset/ert(src), slot_l_ear)
+	equip_to_slot_or_del(new /obj/item/device/radio/headset/ert(src), SLOT_L_EAR)
 
 	//Replaced with new ERT uniform
-	equip_to_slot_or_del(new /obj/item/clothing/under/ert(src), slot_w_uniform)
-	equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(src), slot_shoes)
-	equip_to_slot_or_del(new /obj/item/clothing/gloves/swat(src), slot_gloves)
-	equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(src), slot_glasses)
+	equip_to_slot_or_del(new /obj/item/clothing/under/ert(src), SLOT_W_UNIFORM)
+	equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(src), SLOT_SHOES)
+	equip_to_slot_or_del(new /obj/item/clothing/gloves/swat(src), SLOT_GLOVES)
+	equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(src), SLOT_GLASSES)
 
 	if(leader_selected)
 		var/obj/item/weapon/card/id/ert/W = new(src)
@@ -252,7 +251,7 @@ var/can_call_ert
 		W.registered_name = real_name
 		W.name = "[real_name]'s ID Card ([W.assignment])"
 		W.icon_state = "ert-leader"
-		equip_to_slot_or_del(W, slot_wear_id)
+		equip_to_slot_or_del(W, SLOT_WEAR_ID)
 	else
 		var/obj/item/weapon/card/id/ert/W = new(src)
 		W.assignment = "Emergency Response Team"
@@ -260,7 +259,7 @@ var/can_call_ert
 		W.registered_name = real_name
 		W.name = "[real_name]'s ID Card ([W.assignment])"
 		W.icon_state = "ert"
-		equip_to_slot_or_del(W, slot_wear_id)
+		equip_to_slot_or_del(W, SLOT_WEAR_ID)
 
 	var/obj/item/weapon/implant/mindshield/loyalty/L = new(src)
 	L.inject(src)

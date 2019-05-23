@@ -12,15 +12,14 @@
 	var/warning_high_pressure = WARNING_HIGH_PRESSURE
 	var/warning_low_pressure = WARNING_LOW_PRESSURE
 	var/hazard_low_pressure = HAZARD_LOW_PRESSURE
-	blood_color = "#A10808"
-
+	var/blood_datum = /datum/dirt_cover/red_blood
 	var/obj/item/weapon/card/id/wear_id = null // Fix for station bounced radios -- Skie
 	var/greaterform = HUMAN                  // Used when humanizing a monkey.
 	icon_state = "monkey1"
 	//var/uni_append = "12C4E2"                // Small appearance modifier for different species.
 	var/list/uni_append = list(0x12C,0x4E2)    // Same as above for DNA2.
 	var/update_muts = 1                        // Monkey gene must be set at start.
-	var/alien = 0				   //Used for reagent metabolism.
+	var/race = HUMAN // Used for restrictions checking.
 	holder_type = /obj/item/weapon/holder/monkey
 	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat/monkey = 5)
 
@@ -30,6 +29,7 @@
 	speak_emote = list("mews")
 	icon_state = "tajkey1"
 	uni_append = list(0x0A0,0xE00) // 0A0E00
+	race = TAJARAN
 	holder_type = /obj/item/weapon/holder/monkey/farwa
 
 /mob/living/carbon/monkey/skrell
@@ -38,7 +38,10 @@
 	speak_emote = list("squicks")
 	icon_state = "skrellkey1"
 	uni_append = list(0x01C,0xC92) // 01CC92
+	metabolism_factor = SKRELL_METABOLISM_FACTOR
+	race = SKRELL
 	holder_type = /obj/item/weapon/holder/monkey/neaera
+	blood_datum = /datum/dirt_cover/purple_blood
 
 /mob/living/carbon/monkey/unathi
 	name = "stok"
@@ -46,6 +49,7 @@
 	speak_emote = list("hisses")
 	icon_state = "stokkey1"
 	uni_append = list(0x044,0xC5D) // 044C5D
+	race = UNATHI
 	holder_type = /obj/item/weapon/holder/monkey/stok
 
 /mob/living/carbon/monkey/atom_init()
@@ -86,7 +90,12 @@
 
 	. = ..()
 
+	monkey_list += src
 	update_icons()
+
+/mob/living/carbon/monkey/Destroy()
+	monkey_list -= src
+	return ..()
 
 /mob/living/carbon/monkey/unathi/atom_init()
 
@@ -112,7 +121,6 @@
 /mob/living/carbon/monkey/diona/atom_init()
 
 	. = ..()
-	alien = 1
 	gender = NEUTER
 	dna.mutantrace = "plant"
 	greaterform = DIONA
@@ -134,30 +142,6 @@
 	if (bodytemperature < 283.222)
 		tally += (283.222 - bodytemperature) / 10 * 1.75
 	return tally+config.monkey_delay
-
-/mob/living/carbon/monkey/Topic(href, href_list)
-	..()
-	if (href_list["mach_close"])
-		var/t1 = text("window=[]", href_list["mach_close"])
-		unset_machine()
-		src << browse(null, t1)
-	if ((href_list["item"] && !( usr.stat ) && !( usr.restrained() ) && in_range(src, usr) ))
-		var/obj/item/item = usr.get_active_hand()
-		if(item && (item.flags & (ABSTRACT | DROPDEL)))
-			return
-		var/obj/effect/equip_e/monkey/O = new /obj/effect/equip_e/monkey(  )
-		O.source = usr
-		O.target = src
-		O.item = item
-		O.s_loc = usr.loc
-		O.t_loc = loc
-		O.place = href_list["item"]
-		requests += O
-		spawn( 0 )
-			O.process()
-			return
-	..()
-	return
 
 /mob/living/carbon/monkey/meteorhit(obj/O)
 	for(var/mob/M in viewers(src, null))
@@ -257,21 +241,7 @@
 						O.show_message(text("\red <B>[] has attempted to punch [name]!</B>", M), 1)
 		else
 			if (M.a_intent == "grab")
-				if (M == src || anchored || M.lying)
-					return
-
-				var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(M, src)
-
-				M.put_in_active_hand(G)
-
-				grabbed_by += G
-				G.synch()
-
-				LAssailant = M
-
-				playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-				for(var/mob/O in viewers(src, null))
-					O.show_message(text("\red [] has grabbed [name] passively!", M), 1)
+				M.Grab(src)
 			else
 				if (!( paralysis ))
 					if (prob(25))
@@ -327,20 +297,7 @@
 						O.show_message(text("\red <B>[] has attempted to lunge at [name]!</B>", M), 1)
 
 		if ("grab")
-			if (M == src || anchored || M.lying)
-				return
-			var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(M, src)
-
-			M.put_in_active_hand(G)
-
-			grabbed_by += G
-			G.synch()
-
-			LAssailant = M
-
-			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-			for(var/mob/O in viewers(src, null))
-				O.show_message(text("\red [] has grabbed [name] passively!", M), 1)
+			M.Grab(src)
 
 		if ("disarm")
 			playsound(loc, 'sound/weapons/pierce.ogg', 25, 1, -1)

@@ -16,8 +16,13 @@
 
 /obj/machinery/door/poddoor/atom_init()
 	. = ..()
+	poddoor_list += src
 	if(density)
 		layer = base_layer + PODDOOR_CLOSED_MOD
+
+/obj/machinery/door/poddoor/Destroy()
+	poddoor_list -= src
+	return ..()
 
 /obj/machinery/door/poddoor/Bumped(atom/AM)
 	if(!density)
@@ -27,9 +32,22 @@
 
 /obj/machinery/door/poddoor/attackby(obj/item/weapon/C, mob/user)
 	add_fingerprint(user)
-	if(istype(C, /obj/item/weapon/crowbar) || (istype(C, /obj/item/weapon/twohanded/fireaxe) && C:wielded))
+	if(iscrowbar(C) || (istype(C, /obj/item/weapon/twohanded/fireaxe) && C:wielded))
 		if(!hasPower())
 			open(TRUE)
+	if(ismultitool(C) && hasPower() && !density)
+		var/obj/item/device/multitool/M = C
+		var/turf/turf = get_turf(src)
+		if(turf.z != ZLEVEL_STATION && turf.z != ZLEVEL_ASTEROID)
+			to_chat(user, "<span class='warning'>This poddoor cannot be connected!</span>")
+		else if(src in M.poddoors_buffer)
+			to_chat(user, "<span class='warning'>This poddoor is already in the buffer!</span>")
+		else if(M.poddoors_buffer.len >= M.buffer_limit)
+			to_chat(user, "<span class='warning'>The multitool's buffer is full!</span>")
+		else
+			M.poddoors_buffer += src
+			to_chat(user, "<span class='notice'>You add this poddoor to the buffer of your multitool.</span>")
+
 
 /obj/machinery/door/poddoor/normal_open_checks()
 	if(hasPower())

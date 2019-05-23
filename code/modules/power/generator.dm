@@ -116,7 +116,7 @@
 	add_avail(lastgen)
 
 /obj/machinery/power/generator/attackby(obj/item/weapon/W, mob/user)
-	if(istype(W, /obj/item/weapon/wrench))
+	if(iswrench(W))
 		anchored = !anchored
 		to_chat(user, "\blue You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.")
 		use_power = anchored
@@ -164,7 +164,7 @@
 	t += "<HR>"
 	t += "<A href='?src=\ref[src]'>Refresh</A> <A href='?src=\ref[src];close=1'>Close</A>"
 
-	user << browse(t, "window=teg;size=460x300")
+	user << browse(entity_ja(t), "window=teg;size=460x300")
 	onclose(user, "teg")
 
 

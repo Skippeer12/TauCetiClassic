@@ -20,7 +20,7 @@
 	if(!istype(ticker.mode, /datum/game_mode/gang))
 		return INITIALIZE_HINT_QDEL
 	set_light(2)
-	poi_list |= src
+	poi_list += src
 
 /obj/machinery/dominator/examine(mob/user)
 	..()
@@ -99,9 +99,8 @@
 			//	SSshuttle.settimeleft(0)
 				//SSshuttle.emergency.mode = SHUTTLE_DOCKED
 				//SSshuttle.emergency.timer = world.time
-				//priority_announce("Hostile enviroment resolved. You have 3 minutes to board the Emergency Shuttle.", null, 'sound/AI/shuttledock.ogg', "Priority")
+				//priority_announce("Hostile enviroment resolved. You have 3 minutes to board the Emergency Shuttle.", null,, "Priority")
 				//captain_announce("Hostile enviroment resolved. You have 3 minutes to board the Emergency Shuttle.")
-				//world << sound('sound/AI/shuttledock.ogg')
 			//else
 				//priority_announce("All hostile activity within station systems have ceased.","Network Alert")
 				//captain_announce("All hostile activity within station systems have ceased.")
@@ -118,7 +117,7 @@
 /obj/machinery/dominator/Destroy()
 	if(!(stat & BROKEN))
 		set_broken()
-	poi_list.Remove(src)
+	poi_list -= src
 	return ..()
 
 /obj/machinery/dominator/emp_act(severity)

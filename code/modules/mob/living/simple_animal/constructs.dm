@@ -26,6 +26,8 @@
 	faction = "cult"
 	var/list/construct_spells = list()
 
+	animalistic = FALSE
+
 /mob/living/simple_animal/construct/atom_init()
 	. = ..()
 	name = text("[initial(name)] ([rand(1, 1000)])")
@@ -35,7 +37,7 @@
 
 /mob/living/simple_animal/construct/death()
 	..()
-	new /obj/item/weapon/ectoplasm (src.loc)
+	new /obj/item/weapon/reagent_containers/food/snacks/ectoplasm (src.loc)
 	visible_message("<span class='red'>[src] collapses in a shattered heap.</span>")
 	ghostize(bancheck = TRUE)
 	qdel(src)

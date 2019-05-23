@@ -58,25 +58,24 @@
 #define GETPULSE_TOOL	1	//more accurate (med scanner, sleeper, etc)
 
 // Species Names (keep in mind, that whitelist and preferences DB depends on this names too, and if anything is renamed, update MYSQL tables or is_alien_whitelisted() proc and preferences).
-#define HUMAN       "Human"
-#define UNATHI      "Unathi"
-#define TAJARAN     "Tajaran"
-#define SKRELL      "Skrell"
-#define DIONA       "Diona"
-#define IPC         "Machine"
-#define VOX         "Vox"
-#define VOX_ARMALIS "Vox Armalis"
-#define ABDUCTOR    "Abductor"
-#define SKELETON    "Skeleton"
-#define SHADOWLING  "Shadowling"
-#define MONKEY      "Monkey"
-#define GOLEM       "Adamantine Golem"
-
-//Some on_mob_life() procs check for alien races.
-#define IS_DIONA  1
-#define IS_VOX	  2
-#define IS_SKRELL 3
-#define IS_UNATHI 4
+#define HUMAN          "Human"
+#define UNATHI         "Unathi"
+#define TAJARAN        "Tajaran"
+#define SKRELL         "Skrell"
+#define DIONA          "Diona"
+#define IPC            "Machine"
+#define VOX            "Vox"
+#define VOX_ARMALIS    "Vox Armalis"
+#define ABDUCTOR       "Abductor"
+#define SKELETON       "Skeleton"
+#define SHADOWLING     "Shadowling"
+#define MONKEY         "Monkey"
+#define GOLEM          "Adamantine Golem"
+#define ZOMBIE         "Zombie"
+#define ZOMBIE_TAJARAN "Zombie Tajaran"
+#define ZOMBIE_SKRELL  "Zombie Skrell"
+#define ZOMBIE_UNATHI  "Zombie Unathi"
+#define SLIME          "Slime"
 
 #define HUMAN_STRIP_DELAY 40 //takes 40ds = 4s to strip someone.
 
@@ -92,9 +91,6 @@
 #define NUTRITION_LEVEL_HUNGRY 250
 #define NUTRITION_LEVEL_STARVING 150
 
-// Factor of how fast mob nutrition decreases
-#define HUNGER_FACTOR 0.05
-
 // How many units of reagent are consumed per tick, by default.
 #define REAGENTS_METABOLISM 0.2
 
@@ -103,13 +99,17 @@
 #define REAGENTS_EFFECT_MULTIPLIER REAGENTS_METABOLISM / 0.4
 
 // Factor of how fast mob nutrition decreases
-#define	HUNGER_FACTOR 0.1
+#define METABOLISM_FACTOR 1 // standart (for humans, other)
+#define SKRELL_METABOLISM_FACTOR 2 // Twice the speed for half the sense!
 
 // Taste sensitivity - the more the more reagents you'll taste
 #define TASTE_SENSITIVITY_NORMAL 1
 #define TASTE_SENSITIVITY_SHARP 1.5
 #define TASTE_SENSITIVITY_DULL 0.75
 #define TASTE_SENSITIVITY_NO_TASTE 0
+
+// Roundstart "trait" system
+#define MAX_QUIRKS 6 // The maximum amount of quirks one character can have at roundstart
 
 //Ian can lick or sniff
 #define IAN_STANDARD 0
@@ -121,3 +121,14 @@
 #define CLICK_CD_INTERACT 4
 #define CLICK_CD_RAPID 2
 #define CLICK_CD_AI 9
+#define CLICK_CD_GRAB 40
+#define CLICK_CD_ACTION 20 // used in grab actions
+
+#define NO_SLIP_WHEN_WALKING (1<<0)
+#define SLIDE                (1<<1)
+#define GALOSHES_DONT_HELP   (1<<2)
+#define SLIDE_ICE            (1<<3)
+
+//movement intent defines for the m_intent var
+#define MOVE_INTENT_WALK "walk"
+#define MOVE_INTENT_RUN  "run"

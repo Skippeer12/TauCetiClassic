@@ -53,15 +53,14 @@
 	blob_talk(message)
 
 /mob/camera/blob/proc/blob_talk(message)
-	log_say("[key_name(src)] : [message]")
+	message = sanitize(message)
 
-	message = trim(sanitize(copytext(message, 1, MAX_MESSAGE_LEN)))
+	log_say("[key_name(src)] : [message]")
 
 	if (!message)
 		return
 
 	//var/message_a = say_quote(message)
-	//ïðîáëåìêà êàê è ó àëèåíîâ, ìåðæèòü/îáíîâëÿòü
 	var/message_a = "<span class='say_quote'>says,</span> \"<span class='body'>[message]</span>\""
 	var/rendered = "<font color=\"#EE4000\"><i><span class='game say'>Blob Telepathy, <span class='name'>[name]</span> <span class='message'>[message_a]</span></span></i></font>"
 
@@ -82,11 +81,9 @@
 			stat(null, "Core Health: [blob_core.health]")
 		stat(null, "Power Stored: [blob_points]/[max_blob_points]")
 
-/mob/camera/blob/Move(var/NewLoc, var/Dir = 0)
-	var/obj/effect/blob/B = locate() in range("3x3", NewLoc)
+/mob/camera/blob/Move(NewLoc, Dir = 0, step_x = 0, step_y = 0)
+	. = FALSE
+	var/obj/effect/blob/B = locate() in range(3, NewLoc)
 	if(NewLoc && B)
 		loc = NewLoc
-	else
-		return 0
-
-
+		return TRUE

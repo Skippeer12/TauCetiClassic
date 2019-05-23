@@ -44,6 +44,7 @@
 	req_one_access = list(access_atmospherics, access_engine_equip)
 	frequency = 1439
 	allowed_checks = ALLOWED_CHECK_NONE
+	unacidable = TRUE
 
 	var/breach_detection = TRUE // Whether to use automatic breach detection or not
 	//var/skipprocess = 0 //Experimenting
@@ -94,6 +95,7 @@
 
 /obj/machinery/alarm/atom_init(mapload, dir, building = 0)
 	. = ..()
+	alarm_list += src
 	set_frequency(frequency)
 
 	if(building)
@@ -116,8 +118,6 @@
 
 /obj/machinery/alarm/proc/first_run()
 	alarm_area = get_area(src)
-	if (alarm_area.master)
-		alarm_area = alarm_area.master
 	area_uid = alarm_area.uid
 	if (name == "alarm")
 		name = "[alarm_area.name] Air Alarm"
@@ -133,6 +133,7 @@
 	TLV["temperature"] =	list(T0C-26, T0C, T0C+40, T0C+66) // K
 
 /obj/machinery/alarm/Destroy()
+	alarm_list -= src
 	if(wires)
 		QDEL_NULL(wires)
 	if(alarm_area && alarm_area.master_air_alarm == src)
@@ -291,11 +292,10 @@
 
 /obj/machinery/alarm/proc/elect_master()
 	if(!alarm_area) return
-	for (var/area/A in alarm_area.related)
-		for (var/obj/machinery/alarm/AA in A)
-			if (!(AA.stat & (NOPOWER|BROKEN)))
-				alarm_area.master_air_alarm = AA
-				return 1
+	for (var/obj/machinery/alarm/AA in alarm_area)
+		if (!(AA.stat & (NOPOWER|BROKEN)))
+			alarm_area.master_air_alarm = AA
+			return 1
 	return 0
 
 /obj/machinery/alarm/proc/get_danger_level(current_value, list/danger_levels)
@@ -399,10 +399,8 @@
 
 /obj/machinery/alarm/proc/apply_mode()
 	//propagate mode to other air alarms in the area
-	//TODO: make it so that players can choose between applying the new mode to the room they are in (related area) vs the entire alarm area
-	for (var/area/RA in alarm_area.related)
-		for (var/obj/machinery/alarm/AA in RA)
-			AA.mode = mode
+	for (var/obj/machinery/alarm/AA in alarm_area)
+		AA.mode = mode
 
 	switch(mode)
 		if(AALARM_MODE_SCRUBBING)
@@ -543,7 +541,8 @@
 						"power"     = info["power"],
 						"checks"    = info["checks"],
 						"direction" = info["direction"],
-						"external"  = info["external"]
+						"external"  = info["external"],
+						"internal"  = info["internal"]
 					)
 			data["vents"] = vents
 		if(AALARM_SCREEN_SCRUB)
@@ -670,7 +669,17 @@
 					return FALSE
 
 				if("reset_external_pressure")
-					send_signal(device_id, list(href_list["command"] = ONE_ATMOSPHERE))
+					send_signal(device_id, list(href_list["command"] = TRUE))
+					return FALSE
+
+				if("set_internal_pressure")
+					var/input_pressure = input("What pressure you like the system to mantain?", "Pressure Controls") as num|null
+					if(isnum(input_pressure))
+						send_signal(device_id, list(href_list["command"] = input_pressure))
+					return FALSE
+
+				if("reset_internal_pressure")
+					send_signal(device_id, list(href_list["command"] = TRUE))
 					return FALSE
 
 				if( "power",
@@ -772,19 +781,23 @@
 			return FALSE
 
 
+/obj/machinery/alarm/attack_alien(mob/living/carbon/alien/humanoid/user)
+	user.show_message("You don't want to break these things", 1);
+	return
+
 /obj/machinery/alarm/attackby(obj/item/W, mob/user)
 
 	add_fingerprint(user)
 
 	switch(buildstage)
 		if(2)
-			if(istype(W, /obj/item/weapon/screwdriver))  // Opening that Air Alarm up.
+			if(isscrewdriver(W))  // Opening that Air Alarm up.
 				wiresexposed = !wiresexposed
 				to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
 				update_icon()
 				return
 
-			if (istype(W, /obj/item/weapon/wirecutters) && wiresexposed && wires.is_all_cut())
+			if (iswirecutter(W) && wiresexposed && wires.is_all_cut())
 				user.visible_message("<span class='warning'>[user] has cut the wires inside \the [src]!</span>", "You have cut the wires inside \the [src].")
 				playsound(loc, 'sound/items/Wirecutter.ogg', 50, 1)
 				new /obj/item/stack/cable_coil/random(loc, 5)
@@ -811,7 +824,7 @@
 			return
 
 		if(1)
-			if(istype(W, /obj/item/stack/cable_coil))
+			if(iscoil(W))
 				var/obj/item/stack/cable_coil/coil = W
 				if(!coil.use(5))
 					to_chat(user, "<span class='warning'>You need 5 pieces of cable to do wire \the [src].</span>")
@@ -825,12 +838,11 @@
 				wires.repair()
 				return
 
-			else if(istype(W, /obj/item/weapon/crowbar))
+			else if(iscrowbar(W))
 				if(user.is_busy())
 					return
 				to_chat(user, "You start prying out the circuit.")
-				playsound(loc, 'sound/items/Crowbar.ogg', 50, 1)
-				if(do_after(user,20,target = src))
+				if(W.use_tool(src, user, 20, volume = 50))
 					to_chat(user, "You pry out the circuit!")
 					var/obj/item/weapon/airalarm_electronics/circuit = new /obj/item/weapon/airalarm_electronics()
 					circuit.loc = user.loc
@@ -845,7 +857,7 @@
 				update_icon()
 				return
 
-			else if(istype(W, /obj/item/weapon/wrench))
+			else if(iswrench(W))
 				to_chat(user, "You remove the fire alarm assembly from the wall!")
 				var/obj/item/alarm_frame/frame = new /obj/item/alarm_frame()
 				frame.loc = user.loc
@@ -877,7 +889,7 @@ Just a object used in constructing air alarms
 	icon = 'icons/obj/doors/door_electronics.dmi'
 	icon_state = "door_electronics"
 	desc = "Looks like a circuit. Probably is."
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	m_amt = 50
 	g_amt = 50
 
@@ -895,7 +907,7 @@ Code shamelessly copied from apc_frame
 	flags = CONDUCT
 
 /obj/item/alarm_frame/attackby(obj/item/weapon/W, mob/user)
-	if (istype(W, /obj/item/weapon/wrench))
+	if(iswrench(W))
 		user.SetNextMove(CLICK_CD_RAPID)
 		new /obj/item/stack/sheet/metal(loc, 2)
 		qdel(src)
@@ -980,7 +992,7 @@ FIRE ALARM
 /obj/machinery/firealarm/attackby(obj/item/W, mob/user)
 	add_fingerprint(user)
 
-	if (istype(W, /obj/item/weapon/screwdriver) && buildstage == 2)
+	if (isscrewdriver(W) && buildstage == 2)
 		wiresexposed = !wiresexposed
 		update_icon()
 		return
@@ -988,20 +1000,20 @@ FIRE ALARM
 	if(wiresexposed)
 		switch(buildstage)
 			if(2)
-				if (istype(W, /obj/item/device/multitool))
+				if (ismultitool(W))
 					detecting = !detecting
 					if (detecting)
 						user.visible_message("\red [user] has reconnected [src]'s detecting unit!", "You have reconnected [src]'s detecting unit.")
 					else
 						user.visible_message("\red [user] has disconnected [src]'s detecting unit!", "You have disconnected [src]'s detecting unit.")
-				else if (istype(W, /obj/item/weapon/wirecutters))
+				else if (iswirecutter(W))
 					user.visible_message("\red [user] has cut the wires inside \the [src]!", "You have cut the wires inside \the [src].")
 					new /obj/item/stack/cable_coil/random(loc, 5)
 					playsound(loc, 'sound/items/Wirecutter.ogg', 50, 1)
 					buildstage = 1
 					update_icon()
 			if(1)
-				if(istype(W, /obj/item/stack/cable_coil))
+				if(iscoil(W))
 					var/obj/item/stack/cable_coil/coil = W
 					if(!coil.use(5))
 						to_chat(user, "<span class='warning'>You need 5 pieces of cable to do wire \the [src].</span>")
@@ -1011,10 +1023,9 @@ FIRE ALARM
 					to_chat(user, "You wire \the [src]!")
 					update_icon()
 
-				else if(istype(W, /obj/item/weapon/crowbar))
+				else if(iscrowbar(W))
 					to_chat(user, "You start prying out the circuit.")
-					playsound(loc, 'sound/items/Crowbar.ogg', 50, 1)
-					if(do_after(user,20,target = src))
+					if(W.use_tool(src, user, 20, volume = 50))
 						to_chat(user, "You pry out the circuit!")
 						var/obj/item/weapon/firealarm_electronics/circuit = new /obj/item/weapon/firealarm_electronics()
 						circuit.loc = user.loc
@@ -1028,7 +1039,9 @@ FIRE ALARM
 					buildstage = 1
 					update_icon()
 
-				else if(istype(W, /obj/item/weapon/wrench))
+				else if(iswrench(W))
+					if(user.is_busy())
+						return
 					to_chat(user, "You remove the fire alarm assembly from the wall!")
 					var/obj/item/firealarm_frame/frame = new /obj/item/firealarm_frame()
 					frame.loc = user.loc
@@ -1087,8 +1100,8 @@ FIRE ALARM
 			d2 = text("<A href='?src=\ref[];time=1'>Initiate Time Lock</A>", src)
 		var/second = round(time) % 60
 		var/minute = (round(time) - second) / 60
-		var/dat = "<HTML><HEAD></HEAD><BODY><TT><B>Fire alarm</B> [d1]\n<HR>The current alert level is: [get_security_level()]</b><br><br>\nTimer System: [d2]<BR>\nTime Left: [(minute ? "[minute]:" : null)][second] <A href='?src=\ref[src];tp=-30'>-</A> <A href='?src=\ref[src];tp=-1'>-</A> <A href='?src=\ref[src];tp=1'>+</A> <A href='?src=\ref[src];tp=30'>+</A>\n</TT></BODY></HTML>"
-		user << browse(dat, "window=firealarm")
+		var/dat = "<HTML><HEAD></HEAD><BODY><TT><B>Fire alarm</B> [d1]\n<HR><b>The current alert level is: [get_security_level()]</b><br><br>\nTimer System: [d2]<BR>\nTime Left: [(minute ? "[minute]:" : null)][second] <A href='?src=\ref[src];tp=-30'>-</A> <A href='?src=\ref[src];tp=-1'>-</A> <A href='?src=\ref[src];tp=1'>+</A> <A href='?src=\ref[src];tp=30'>+</A>\n</TT></BODY></HTML>"
+		user << browse(entity_ja(dat), "window=firealarm")
 		onclose(user, "firealarm")
 	else
 		if (A.fire)
@@ -1102,7 +1115,7 @@ FIRE ALARM
 		var/second = round(time) % 60
 		var/minute = (round(time) - second) / 60
 		var/dat = "<HTML><HEAD></HEAD><BODY><TT><B>[stars("Fire alarm")]</B> [d1]\n<HR><b>The current alert level is: [stars(get_security_level())]</b><br><br>\nTimer System: [d2]<BR>\nTime Left: [(minute ? text("[]:", minute) : null)][second] <A href='?src=\ref[src];tp=-30'>-</A> <A href='?src=\ref[src];tp=-1'>-</A> <A href='?src=\ref[src];tp=1'>+</A> <A href='?src=\ref[src];tp=30'>+</A>\n</TT></BODY></HTML>"
-		user << browse(dat, "window=firealarm")
+		user << browse(entity_ja(dat), "window=firealarm")
 		onclose(user, "firealarm")
 
 /obj/machinery/firealarm/Topic(href, href_list)
@@ -1149,6 +1162,8 @@ FIRE ALARM
 /obj/machinery/firealarm/atom_init(mapload, dir, building)
 	. = ..()
 
+	firealarm_list += src
+
 	if(loc)
 		src.loc = loc
 
@@ -1169,6 +1184,10 @@ FIRE ALARM
 
 	update_icon()
 
+/obj/machinery/firealarm/Destroy()
+	firealarm_list -= src
+	return ..()
+
 /*
 FIRE ALARM CIRCUIT
 Just a object used in constructing fire alarms
@@ -1178,7 +1197,7 @@ Just a object used in constructing fire alarms
 	icon = 'icons/obj/doors/door_electronics.dmi'
 	icon_state = "door_electronics"
 	desc = "A circuit. It has a label on it, it says \"Can handle heat levels up to 40 degrees celsius!\""
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	m_amt = 50
 	g_amt = 50
 
@@ -1196,7 +1215,7 @@ Code shamelessly copied from apc_frame
 	flags = CONDUCT
 
 /obj/item/firealarm_frame/attackby(obj/item/weapon/W, mob/user)
-	if (istype(W, /obj/item/weapon/wrench))
+	if(iswrench(W))
 		user.SetNextMove(CLICK_CD_RAPID)
 		new /obj/item/stack/sheet/metal(loc, 2)
 		qdel(src)

@@ -17,6 +17,7 @@
 	var/ckey=null
 	var/mind=null
 	var/languages=null
+	var/list/quirks
 
 /datum/dna2/record/proc/GetData()
 	var/list/ser=list("data" = null, "owner" = null, "label" = null, "type" = null, "ue" = 0)
@@ -60,8 +61,8 @@
 	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
 	component_parts += new /obj/item/weapon/stock_parts/micro_laser(null)
 	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/stack/cable_coil/random(null, 1)
-	component_parts += new /obj/item/stack/cable_coil/random(null, 1)
+	component_parts += new /obj/item/stack/cable_coil/red(null, 1)
+	component_parts += new /obj/item/stack/cable_coil/red(null, 1)
 	RefreshParts()
 
 /obj/machinery/dna_scannernew/RefreshParts()
@@ -128,12 +129,12 @@
 
 				if (occupant.stat == DEAD)
 					if (occupant.client) //Ghost in body?
-						occupant << 'sound/machines/chime.ogg'	//probably not the best sound but I think it's reasonable
+						send_sound(occupant, 'sound/machines/chime.ogg') 	//probably not the best sound but I think it's reasonable
 					else
 						for(var/mob/dead/observer/ghost in player_list)
 							if(ghost.mind == occupant.mind)
 								if(ghost.can_reenter_corpse)
-									ghost << 'sound/machines/chime.ogg'	//probably not the best sound but I think it's reasonable
+									send_sound(ghost, 'sound/machines/chime.ogg')	//probably not the best sound but I think it's reasonable
 									var/answer = alert(ghost,"Do you want to return to corpse for cloning?","Cloning","Yes","No")
 									if(answer == "Yes")
 										ghost.reenter_corpse()
@@ -176,7 +177,7 @@
 	if(exchange_parts(user, I))
 		return
 
-	if(istype(I, /obj/item/weapon/crowbar))
+	if(iscrowbar(I))
 		if(panel_open)
 			for(var/obj/O in contents) // in case there is something in the scanner
 				O.loc = loc
@@ -698,7 +699,7 @@
 
 		else if (bufferOption == "changeLabel")
 			var/datum/dna2/record/buf = buffers[bufferId]
-			var/text = sanitize(input(usr, "New Label:", "Edit Label", buf.name) as text|null)
+			var/text = sanitize_safe(input(usr, "New Label:", "Edit Label", input_default(buf.name)) as text|null, MAX_NAME_LEN)
 			buf.name = text
 			buffers[bufferId] = buf
 

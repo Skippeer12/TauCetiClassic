@@ -5,11 +5,17 @@
 	amount = 5
 	max_amount = 5
 	w_class = ITEM_SIZE_TINY
-	full_w_class = ITEM_SIZE_TINY
+	full_w_class = ITEM_SIZE_SMALL
 	throw_speed = 4
 	throw_range = 20
 	var/heal_brute = 0
 	var/heal_burn = 0
+
+/obj/item/stack/medical/update_weight()
+	if(amount < 3)
+		w_class = initial(w_class)
+	else
+		w_class = full_w_class
 
 /obj/item/stack/medical/attack(mob/living/carbon/M, mob/user, def_zone)
 	if(!istype(M))
@@ -66,6 +72,7 @@
 				to_chat(user, "<span class='warning'>The wounds on [M]'s [BP.name] have already been bandaged.</span>")
 				return 1
 			else
+				playsound(src, "bandg", 15, 1)
 				user.visible_message("<span class='notice'>\The [user] starts treating [M]'s [BP.name].</span>", \
 									"<span class='notice'>You start treating [M]'s [BP.name].</span>")
 
@@ -107,6 +114,10 @@
 					return
 			else
 				to_chat(user, "<span class='notice'>The [BP.name] is cut open, you'll need more than a bandage!</span>")
+
+/obj/item/stack/medical/bruise_pack/update_icon()
+	var/icon_amount = min(amount, max_amount)
+	icon_state = "[initial(icon_state)][icon_amount]"
 
 /obj/item/stack/medical/ointment
 	name = "ointment"
@@ -150,21 +161,31 @@
 			else
 				to_chat(user, "<span class='notice'>The [BP.name] is cut open, you'll need more than a bandage!</span>")
 
+/obj/item/stack/medical/ointment/update_icon()
+	var/icon_amount = min(amount, max_amount)
+	icon_state = "[initial(icon_state)][icon_amount]"
+
 /obj/item/stack/medical/bruise_pack/tajaran
 	name = "\improper S'rendarr's Hand leaf"
 	singular_name = "S'rendarr's Hand leaf"
 	desc = "A poultice made of soft leaves that is rubbed on bruises."
-	icon = 'icons/obj/harvest.dmi'
+	icon = 'icons/obj/hydroponics/harvest.dmi'
 	icon_state = "shandp"
 	heal_brute = 7
+
+/obj/item/stack/medical/bruise_pack/tajaran/update_icon()
+	return
 
 /obj/item/stack/medical/ointment/tajaran
 	name = "\improper Messa's Tear petals"
 	singular_name = "Messa's Tear petals"
 	desc = "A poultice made of cold, blue petals that is rubbed on burns."
-	icon = 'icons/obj/harvest.dmi'
+	icon = 'icons/obj/hydroponics/harvest.dmi'
 	icon_state = "mtearp"
 	heal_burn = 7
+
+/obj/item/stack/medical/ointment/tajaran/update_icon()
+	return
 
 /obj/item/stack/medical/advanced/bruise_pack
 	name = "advanced trauma kit"
@@ -172,7 +193,12 @@
 	desc = "An advanced trauma kit for severe injuries."
 	icon_state = "traumakit"
 	heal_brute = 12
+	amount = 6
+	max_amount = 6
 	origin_tech = "biotech=1"
+
+/obj/item/stack/medical/advanced/bruise_pack/update_icon()
+	icon_state = "[initial(icon_state)][amount]"
 
 /obj/item/stack/medical/advanced/bruise_pack/attack(mob/living/carbon/M, mob/user, def_zone)
 	if(..())
@@ -187,6 +213,7 @@
 				to_chat(user, "<span class='warning'>The wounds on [M]'s [BP.name] have already been treated.</span>")
 				return 1
 			else
+				playsound(src, "bandg", 15, 1)
 				user.visible_message("<span class='notice'>\The [user] starts treating [M]'s [BP.name].</span>", \
 									"<span class='notice'>You start treating [M]'s [BP.name].</span>")
 
@@ -195,6 +222,7 @@
 						continue
 					if(!use(1))
 						break
+					update_icon()
 					if(!do_mob(user, M, W.damage))
 						to_chat(user, "<span class='notice'>You must stand still to bandage wounds.</span>")
 						break
@@ -231,8 +259,13 @@
 	singular_name = "advanced burn kit"
 	desc = "An advanced treatment kit for severe burns."
 	icon_state = "burnkit"
+	amount = 6
+	max_amount = 6
 	heal_burn = 12
 	origin_tech = "biotech=1"
+
+/obj/item/stack/medical/advanced/ointment/update_icon()
+	icon_state = "[initial(icon_state)][amount]"
 
 /obj/item/stack/medical/advanced/ointment/attack(mob/living/carbon/M, mob/user, def_zone)
 	if(..())
@@ -257,7 +290,7 @@
 				if(!use(1))
 					to_chat(user, "<span class='danger'>You need more advanced burn kit's to do this.</span>")
 					return
-
+				update_icon()
 				user.visible_message("<span class='notice'>\The [user] covers wounds on [M]'s [BP.name] with regenerative membrane.</span>", \
 									"<span class='notice'>You cover wounds on [M]'s [BP.name] with regenerative membrane.</span>")
 				BP.heal_damage(0, heal_burn)
@@ -276,6 +309,8 @@
 	icon_state = "splint"
 	amount = 5
 	max_amount = 5
+	w_class = ITEM_SIZE_SMALL
+	full_w_class = ITEM_SIZE_SMALL
 
 /obj/item/stack/medical/splint/attack(mob/living/carbon/M, mob/user, def_zone)
 	if(..())
@@ -318,7 +353,7 @@
 										"<span class='danger'>You successfully apply \the [src] to your [limb].</span>", \
 										"<span class='danger'>You hear something being wrapped.</span>")
 				else
-					user.visible_message("<span class='danger'>[user] fumbles \the [src].", \
+					user.visible_message("<span class='danger'>[user] fumbles \the [src].</span>", \
 										"<span class='danger'>You fumble \the [src].</span>", \
 										"<span class='danger'>You hear something being wrapped.</span>")
 					return

@@ -3,17 +3,19 @@
 	var/message_range = world.view
 	var/italics = 0
 	var/alt_name = ""
+	var/sound/speech_sound
+	var/sound_vol
 	if(client)
 		if(client.prefs.muted & MUTE_IC)
 			to_chat(src, "<span class='userdange'>You cannot speak in IC (Muted).</span>")
 			return
 
 	//Meme stuff
-	if((!speech_allowed && usr == src) || miming)
+	if((!speech_allowed && usr == src) || ((miming || has_trait(TRAIT_MUTE)) && !(copytext(message, 1, 2) == "*")))
 		to_chat(usr, "<span class='userdange'>You can't speak.</span>")
 		return
 
-	message =  trim(sanitize_plus(copytext(message, 1, MAX_MESSAGE_LEN)))
+	message =  sanitize(message)
 
 	if(stat == DEAD)
 		if(fake_death) //Our changeling with fake_death status must not speak in dead chat!!
@@ -56,23 +58,21 @@
 			if(ABDUCTOR)
 				var/mob/living/carbon/human/user = usr
 				var/sm = sanitize(message)
-				for(var/mob/living/carbon/human/H in mob_list)
+				for(var/mob/living/carbon/human/H in human_list)
 					if(H.species.name != ABDUCTOR)
 						continue
-					else
-						if(user.team != H.team)
-							continue
-						else
-							to_chat(H, text("<span class='abductor_team[]'><b>[user.real_name]:</b> [sm]</span>", user.team))
-							//return - technically you can add more aliens to a team
-				for(var/mob/M in dead_mob_list)
+					if(user.team != H.team)
+						continue
+					to_chat(H, text("<span class='abductor_team[]'><b>[user.real_name]:</b> [sm]</span>", user.team))
+					//return - technically you can add more aliens to a team
+				for(var/mob/M in observer_list)
 					to_chat(M, text("<span class='abductor_team[]'><b>[user.real_name]:</b> [sm]</span>", user.team))
-					if(!isobserver(M) && (M.stat != DEAD))
-						to_chat(M, "<hr><span class='warning'>Если вы видите это сообщение, значит что-то сломалось. Пожалуйста, свЯжитесь со мной <b>SpaiR</b> на форуме (http://tauceti.ru/forums/index.php?action=profile;u=1929) или попросите кого-нибудь менЯ позвать. Пожалуйста, <u>запомните</u> что произошло в раунде, эта информациЯ очень <b>важна</b>. Чтобы сообщение исчезло попросите админа достать вас из тела и поместить обратно или сами уйдите в обсерверы.</span><hr>")
 				log_say("Abductor: [name]/[key] : [sm]")
 				return ""
 
 	message = capitalize(trim(message))
+	if(iszombie(src))
+		message = zombie_talk(message)
 
 	var/ending = copytext(message, length(message))
 	if (speaking)
@@ -90,6 +90,9 @@
 		message = handle_r[1]
 		verb = handle_r[2]
 		speech_problem_flag = handle_r[3]
+		if(handle_r[4]) // speech sound management
+			speech_sound = handle_r[4]
+			sound_vol = handle_r[5]
 
 	if(!message || stat)
 		return
@@ -143,11 +146,12 @@
 			return
 		if("binary")
 			if(robot_talk_understand || binarycheck())
-				robot_talk(sanitize_plus_chat(message))
+				robot_talk(message)
 			return
 		if("changeling")
 			if(mind && mind.changeling)
-				var/n_message = sanitize_plus_chat(message)
+				var/n_message = message
+				log_say("Changeling Mind: [mind.changeling.changelingID]/[mind.name]/[key] : [n_message]")
 				for(var/mob/Changeling in mob_list)
 					if(Changeling.mind && Changeling.mind.changeling)
 						to_chat(Changeling, "<span class='changeling'><b>[mind.changeling.changelingID]:</b> [n_message]</span>")
@@ -159,13 +163,18 @@
 			return
 		if("alientalk")
 			if(mind && mind.changeling)
-				var/n_message = sanitize_plus_chat(message)
+				var/n_message = message
 				for(var/M in mind.changeling.essences)
 					to_chat(M, "<span class='shadowling'><b>[mind.changeling.changelingID]:</b> [n_message]</span>")
-				for(var/datum/orbit/O in orbiters)
-					to_chat(O.orbiter, "<span class='shadowling'><b>[mind.changeling.changelingID]:</b> [n_message]</span>")
+
+				for(var/mob/M in observer_list)
+					if(!M.client)
+						continue //skip monkeys, leavers and new players
+					if(M.client.prefs.chat_toggles & CHAT_GHOSTEARS)
+						to_chat(M, "<span class='shadowling'><b>[mind.changeling.changelingID]:</b> [n_message]</span>")
+
 				to_chat(src, "<span class='shadowling'><b>[mind.changeling.changelingID]:</b> [n_message]</span>")
-				log_say("Changeling Mind: [mind.name]/[key] : [n_message]")
+				log_say("Changeling Mind: [mind.changeling.changelingID]/[mind.name]/[key] : [n_message]")
 			return
 		else
 			if(message_mode)
@@ -177,13 +186,11 @@
 						r_ear.talk_into(src,message, message_mode, verb, speaking)
 						used_radios += r_ear
 
-	var/sound/speech_sound
-	var/sound_vol
 	if((species.name == VOX || species.name == VOX_ARMALIS) && prob(20))
 		speech_sound = sound('sound/voice/shriek1.ogg')
 		sound_vol = 50
 
-	..(message, speaking, verb, alt_name, italics, message_range, used_radios, speech_sound, sound_vol, sanitize = 0)	//ohgod we should really be passing a datum here.
+	..(message, speaking, verb, alt_name, italics, message_range, used_radios, speech_sound, sound_vol, sanitize = FALSE, message_mode = message_mode)	//ohgod we should really be passing a datum here.
 
 /mob/living/carbon/human/say_understands(mob/other,datum/language/speaking = null)
 
@@ -251,9 +258,11 @@
 
 //mob/living/carbon/human/proc/handle_speech_problems(message)
 /mob/living/carbon/human/proc/handle_speech_problems(message, message_mode)
-	var/list/returns[3]
+	var/list/returns[5]
 	var/verb = "says"
 	var/handled = 0
+	var/sound/speech_sound = null
+	var/sound_vol = 50
 	if(silent)
 		if(message_mode != "changeling")
 			message = ""
@@ -261,13 +270,25 @@
 	if(sdisabilities & MUTE)
 		message = ""
 		handled = 1
+	if(gnomed)
+		handled = 1
+		if((message_mode != "changeling") && prob(40))
+			if(prob(80))
+				message = pick("A-HA-HA-HA!", "U-HU-HU-HU!", "I'm a GN-NOME!", "I'm a GnOme!", "Don't GnoMe me!", "I'm gnot a gnoblin!", "You've been GNOMED!")
+			else if(config.rus_language)
+				message =  "[message]... Но я ГНОМ!"
+			else
+				message =  "[message]... But i'm A GNOME!"
+			verb = pick("yells like an idiot", "says rather loudly")
+			speech_sound = 'sound/magic/GNOMED.ogg'
+
 	if(wear_mask)
 		if(message_mode != "changeling")
 			message = wear_mask.speechModification(message)
 		handled = 1
 
 	if((HULK in mutations) && health >= 25 && length(message))
-		message = "[uppertext_plus(message)]!!!"
+		message = "[uppertext_(message)]!!!"
 		verb = pick("yells","roars","hollers")
 		handled = 1
 	if(slurring)
@@ -286,11 +307,13 @@
 			message = stutter(message)
 			verb = pick("stammers", "stutters")
 		if(prob(braindam))
-			message = uppertext_plus(message)
+			message = uppertext_(message)
 			verb = pick("yells like an idiot","says rather loudly")
 
 	returns[1] = message
 	returns[2] = verb
 	returns[3] = handled
+	returns[4] = speech_sound
+	returns[5] = sound_vol
 
 	return returns

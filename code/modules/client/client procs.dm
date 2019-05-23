@@ -3,8 +3,14 @@
 	////////////
 #define TOPIC_SPAM_DELAY	2		//2 ticks is about 2/10ths of a second; it was 4 ticks, but that caused too many clicks to be lost due to lag
 #define UPLOAD_LIMIT		10485760	//Restricts client uploads to the server to 10MB //Boosted this thing. What's the worst that can happen?
-#define MIN_CLIENT_VERSION	0		//Just an ambiguously low version for now, I don't want to suddenly stop people playing.
-									//I would just like the code ready should it ever need to be used.
+
+var/list/blacklisted_builds = list(
+	"1407" = "bug preventing client display overrides from working leads to clients being able to see things/mobs they shouldn't be able to see",
+	"1408" = "bug preventing client display overrides from working leads to clients being able to see things/mobs they shouldn't be able to see",
+	"1428" = "bug causing right-click menus to show too many verbs that's been fixed in version 1429",
+	"1434" = "bug turf images weren't reapplied properly when moving around the map",
+	)
+
 	/*
 	When somebody clicks a link in game, this Topic is called first.
 	It does the stuff in this proc and  then is redirected to the Topic() proc for the src=[0xWhatever]
@@ -45,6 +51,12 @@
 		completed_asset_jobs += job
 		return
 
+	if (href_list["action"] && href_list["action"] == "debugFileOutput" && href_list["file"] && href_list["message"])
+		var/file = href_list["file"]
+		var/message = href_list["message"]
+		debugFileOutput.error(file, message, src)
+		return
+
 	//Admin PM
 	if(href_list["priv_msg"])
 		var/client/C = locate(href_list["priv_msg"])
@@ -52,7 +64,10 @@
 			var/mob/M = C
 			C = M.client
 		if(href_list["ahelp_reply"])
-			cmd_ahelp_reply(C)
+			cmd_ahelp_reply(C, text2num(href_list["ahelp_reply"]))
+			return
+		if(href_list["mentor_pm"])
+			cmd_mentor_pm(C)
 			return
 		cmd_admin_pm(C,null)
 		return
@@ -126,13 +141,6 @@
 
 	if(connection != "seeker")					//Invalid connection type.
 		return null
-	if(byond_version < MIN_CLIENT_VERSION)		//Out of date client.
-		return null
-
-	if(IsGuestKey(key))
-		alert(src,"This server doesn't allow guest accounts to play. Please go to http://www.byond.com/ and register for a key.","Guest","OK")
-		qdel(src)
-		return
 
 	// Change the way they should download resources.
 	if(config.resource_urls)
@@ -144,6 +152,8 @@
 
 	clients += src
 	directory[ckey] = src
+
+	global.ahelp_tickets.ClientLogin(src)
 
 	//Admin Authorisation
 	holder = admin_datums[ckey]
@@ -159,7 +169,9 @@
 
 	//preferences datum - also holds some persistant data for the client (because we may as well keep these datums to a minimum)
 	prefs = preferences_datums[ckey]
-	if(!prefs)
+	if(prefs)
+		prefs.parent = src
+	else
 		prefs = new /datum/preferences(src)
 		preferences_datums[ckey] = prefs
 	prefs.last_ip = address				//these are gonna be used for banning
@@ -181,6 +193,36 @@
 	spawn() // Goonchat does some non-instant checks in start()
 		chatOutput.start()
 
+
+	spawn(50)//should wait for goonchat initialization
+		if(config.byond_version_min && byond_version < config.byond_version_min)
+			to_chat(src, "<span class='warning bold'>Your version of Byond is too old. Update to the [config.byond_version_min] or later for playing on our server.</span>")
+			log_access("Failed Login: [key] [computer_id] [address] - byond version less that minimal required: [byond_version].[byond_build])")
+			if(!holder)
+				qdel(src)
+				return
+
+		if(config.byond_version_recommend && byond_version < config.byond_version_recommend)
+			to_chat(src, "<span class='warning bold'>Your version of Byond is less that recommended. Update to the [config.byond_version_recommend] for better experiense.</span>")
+
+		if((byond_version >= 512 && (!byond_build || byond_build < 1421)) || num2text(byond_build) in blacklisted_builds)
+			to_chat(src, "<span class='warning bold'>You are using the inappropriate Byond version. Update to the latest Byond version or install another from http://www.byond.com/download/build/ for playing on our server.</span>")
+			message_admins("<span class='adminnotice'>[key_name(src)] has been detected as using a inappropriate byond version: [byond_version].[byond_build]. Connection rejected.</span>")
+			log_access("Failed Login: [key] [computer_id] [address] - inappropriate byond version: [byond_version].[byond_build])")
+			if(!holder)
+				qdel(src)
+				return
+
+		if(config.registration_panic_bunker_age)
+			if(!(src in admin_datums) && !(src in mentors) && is_blocked_by_regisration_panic_bunker())
+				to_chat(src, "<span class='danger'>Sorry, but server is currently accepting only users with registration date before [config.registration_panic_bunker_age]. Try to connect later.</span>")
+				message_admins("<span class='adminnotice'>[key_name(src)] has been blocked by panic bunker. Connection rejected.</span>")
+				log_access("Failed Login: [key] [computer_id] [address] - blocked by panic bunker")
+				qdel(src)
+				return
+			if(holder)
+				to_chat("<span class='adminnotice'>Round with registration panic bunker! Panic age: [config.registration_panic_bunker_age]</span>")
+
 	if(custom_event_msg && custom_event_msg != "")
 		to_chat(src, "<h1 class='alert'>Custom Event</h1>")
 		to_chat(src, "<h2 class='alert'>A custom event is taking place. OOC Info:</h2>")
@@ -195,10 +237,10 @@
 		add_admin_verbs()
 		admin_memo_show()
 
-	if(config.allow_donators && ckey in donators)
-		donator = 1
-		to_chat(src, "<span class='info bold'>Hello [key]! Thanks for supporting us! You have access to all the additional donator-only features this month.</span>")
-		
+	if (config.allow_donators && (ckey in donators) || config.allow_byond_membership && IsByondMember())
+		supporter = 1
+		to_chat(src, "<span class='info bold'>Hello [key]! Thanks for supporting [(ckey in donators) ? "us" : "Byond"]! You are awesome! You have access to all the additional supporters-only features this month.</span>")
+
 	log_client_to_db(tdata)
 
 	send_resources()
@@ -235,9 +277,11 @@
 	if(holder)
 		holder.owner = null
 		admins -= src
+	global.ahelp_tickets.ClientLogout(src)
 	directory -= ckey
 	mentors -= src
 	clients -= src
+	QDEL_LIST_ASSOC_VAL(char_render_holders)
 	if(movingmob != null)
 		movingmob.client_mobs_in_contents -= mob
 		UNSETEMPTY(movingmob.client_mobs_in_contents)
@@ -254,7 +298,7 @@
 	if(!dbcon.IsConnected())
 		return
 
-	var/sql_ckey = sql_sanitize_text(src.ckey)
+	var/sql_ckey = sanitize_sql(src.ckey)
 
 	var/DBQuery/query = dbcon.NewQuery("SELECT id, datediff(Now(),firstseen) as age, ingameage FROM erro_player WHERE ckey = '[sql_ckey]'")
 	query.Execute()
@@ -294,9 +338,9 @@
 		if(!isnum(sql_id))
 			return
 
-	var/sql_ip = sql_sanitize_text(src.address)
-	var/sql_computerid = sql_sanitize_text(src.computer_id)
-	var/sql_admin_rank = sql_sanitize_text(admin_rank)
+	var/sql_ip = sanitize_sql(src.address)
+	var/sql_computerid = sanitize_sql(src.computer_id)
+	var/sql_admin_rank = sanitize_sql(admin_rank)
 
 
 	if(sql_id)
@@ -363,7 +407,7 @@
 				cidcheck_spoofckeys -= ckey
 			cidcheck -= ckey
 	else
-		var/sql_ckey = sanitizeSQL(ckey)
+		var/sql_ckey = sanitize_sql(ckey)
 		var/DBQuery/query_cidcheck = dbcon.NewQuery("SELECT computerid FROM erro_player WHERE ckey = '[sql_ckey]'")
 		query_cidcheck.Execute()
 
@@ -402,13 +446,18 @@
 	if(player_ingame_age <= 0)
 		return
 
-	var/sql_ckey = sql_sanitize_text(src.ckey)
+	var/sql_ckey = sanitize_sql(src.ckey)
 	var/DBQuery/query_update = dbcon.NewQuery("UPDATE erro_player SET ingameage = '[player_ingame_age]' WHERE ckey = '[sql_ckey]'")
 	query_update.Execute()
 
 #undef TOPIC_SPAM_DELAY
 #undef UPLOAD_LIMIT
-#undef MIN_CLIENT_VERSION
+
+/client/Click(atom/object, atom/location, control, params)
+	var/list/modifiers = params2list(params)
+	if(modifiers["drag"])
+		return
+	..()
 
 //checks if a client is afk
 //3000 frames = 5 minutes
@@ -452,5 +501,47 @@
 	set category = "OOC"
 	set desc = "Closes all opened NanoUI."
 
-	to_chat(src, "<span class='notice'>You forcibly close any opened NanoUI interfaces.")
+	to_chat(src, "<span class='notice'>You forcibly close any opened NanoUI interfaces.</span>")
 	nanomanager.close_user_uis(usr)
+
+/client/proc/show_character_previews(mutable_appearance/MA)
+	var/pos = 0
+	for(var/D in cardinal)
+		pos++
+		var/obj/screen/O = LAZYACCESS(char_render_holders, "[D]")
+		if(!O)
+			O = new
+			LAZYSET(char_render_holders, "[D]", O)
+			screen |= O
+		O.appearance = MA
+		O.dir = D
+		O.underlays += image('icons/turf/floors.dmi', "floor")
+		O.screen_loc = "character_preview_map:0,[pos]"
+
+/client/proc/clear_character_previews()
+	for(var/index in char_render_holders)
+		var/obj/screen/S = char_render_holders[index]
+		screen -= S
+		qdel(S)
+	char_render_holders = null
+
+/client/proc/is_blocked_by_regisration_panic_bunker()
+	var/regex/joined_date_regex = regex("joined = \"(\\d+)-(\\d+)-(\\d+)\"")
+	var/regex/bunker_date_regex = regex("(\\d+)-(\\d+)-(\\d+)")
+	var/user_page = get_webpage("http://www.byond.com/members/[ckey]?format=text")
+
+	if (!user_page)
+		return
+
+	joined_date_regex.Find(user_page)
+	bunker_date_regex.Find(config.registration_panic_bunker_age)
+
+	var/user_year = text2num(joined_date_regex.group[1])
+	var/user_month = text2num(joined_date_regex.group[2])
+	var/user_day = text2num(joined_date_regex.group[3])
+
+	var/bunker_year = text2num(bunker_date_regex.group[1])
+	var/bunker_month = text2num(bunker_date_regex.group[2])
+	var/bunker_day = text2num(bunker_date_regex.group[3])
+
+	return (user_year > bunker_year) || (user_year == bunker_year && user_month > bunker_month) || (user_year == bunker_year && user_month == bunker_month && user_day > bunker_day)

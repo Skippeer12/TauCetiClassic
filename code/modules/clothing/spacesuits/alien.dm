@@ -40,7 +40,7 @@
 	armor = list(melee = 40, bullet = 30, laser = 30,energy = 15, bomb = 35, bio = 100, rad = 50)
 	heat_protection = HEAD
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	var/up = 0 //So Unathi helmets play nicely with the weldervision check.
+	var/up = 1 //So Unathi helmets play nicely with the weldervision check.
 	species_restricted = list(UNATHI)
 
 /obj/item/clothing/head/helmet/space/unathi/helmet_cheap
@@ -49,6 +49,27 @@
 	icon_state = "unathi_helm_cheap"
 	item_state = "unathi_helm_cheap"
 	item_color = "unathi_helm_cheap"
+
+	action_button_name = "Toggle Helmet Light"
+	var/brightness_on = 4 //luminosity when on
+	var/on = 0
+
+	light_color = "#00ffff"
+
+/obj/item/clothing/head/helmet/space/unathi/helmet_cheap/attack_self(mob/user)
+	if(!isturf(user.loc))
+		to_chat(user, "You cannot turn the light on while in this [user.loc]")//To prevent some lighting anomalities.
+		return
+	on = !on
+	icon_state = "unathi_helm_cheap[on ? "-light" : ""]"
+	usr.update_inv_head()
+
+	if(on)	set_light(brightness_on)
+	else	set_light(0)
+
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		H.update_inv_head()
 
 /obj/item/clothing/suit/space/unathi
 	armor = list(melee = 40, bullet = 30, laser = 30,energy = 15, bomb = 35, bio = 100, rad = 50)
@@ -62,7 +83,7 @@
 	desc = "A cheap NT knock-off of a Unathi battle-rig. Looks like a fish, moves like a fish, steers like a cow."
 	icon_state = "rig-unathi-cheap"
 	item_state = "rig-unathi-cheap"
-	slowdown = 3
+	slowdown = 2.3
 
 /obj/item/clothing/head/helmet/space/unathi/breacher
 	name = "breacher helm"
@@ -82,7 +103,7 @@
 // Vox space gear (vaccuum suit, low pressure armour)
 // Can't be equipped by any other species due to bone structure and vox cybernetics.
 /obj/item/clothing/suit/space/vox
-	w_class = 3
+	w_class = ITEM_SIZE_NORMAL
 	allowed = list(/obj/item/weapon/gun,/obj/item/ammo_box/magazine,/obj/item/ammo_casing,/obj/item/weapon/melee/baton,/obj/item/weapon/melee/energy/sword,/obj/item/weapon/handcuffs,/obj/item/weapon/tank)
 	slowdown = 1.5
 	armor = list(melee = 60, bullet = 50, laser = 40,energy = 15, bomb = 30, bio = 30, rad = 30)
@@ -163,7 +184,7 @@
 
 /obj/item/clothing/suit/space/vox/stealth/equipped(mob/user, slot)
 	..()
-	if(slot == slot_wear_suit)
+	if(slot == SLOT_WEAR_SUIT)
 		wearer = user
 
 /obj/item/clothing/suit/space/vox/stealth/dropped(mob/user)
@@ -200,7 +221,7 @@
 
 /obj/item/clothing/suit/space/vox/stealth/proc/overload()
 	wearer.visible_message(
-	"<span class='warning'>[wearer] appears from nowhere!",
+	"<span class='warning'>[wearer] appears from nowhere!</span>",
 	"<span class='warning'>Your stealth got overloaded and no longer can sustain itself!</span>"
 	)
 	var/datum/effect/effect/system/spark_spread/s = new

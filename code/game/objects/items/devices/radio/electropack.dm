@@ -5,8 +5,8 @@
 	item_state = "electropack"
 	frequency = 1449
 	flags = CONDUCT
-	slot_flags = SLOT_BACK
-	w_class = 5.0
+	slot_flags = SLOT_FLAGS_BACK
+	w_class = ITEM_SIZE_HUGE
 	g_amt = 2500
 	m_amt = 10000
 	var/code = 2
@@ -122,6 +122,6 @@ Code:
 <A href='byond://?src=\ref[src];code=1'>+</A>
 <A href='byond://?src=\ref[src];code=5'>+</A><BR>
 </TT>"}
-	user << browse(dat, "window=radio")
+	user << browse(entity_ja(dat), "window=radio")
 	onclose(user, "radio")
 	return

@@ -4,7 +4,7 @@
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "scroll"
 	var/uses = 4.0
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	item_state = "paper"
 	throw_speed = 4
 	throw_range = 20
@@ -20,7 +20,7 @@
 	dat += "<B>Four uses use them wisely:</B><BR>"
 	dat += "<A href='byond://?src=\ref[src];spell_teleport=1'>Teleport</A><BR>"
 	dat += "Kind regards,<br>Wizards Federation<br><br>P.S. Don't forget to bring your gear, you'll need it to cast most spells.<HR>"
-	user << browse(dat, "window=scroll")
+	user << browse(entity_ja(dat), "window=scroll")
 	onclose(user, "scroll")
 	return
 

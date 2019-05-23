@@ -13,7 +13,6 @@
 	var/timeleft = 60
 	var/stop = 0.0
 	var/screen = 0 // 0 - No Access Denied, 1 - Access allowed
-	light_color = "#B40000"
 
 /obj/machinery/computer/prisoner/ui_interact(mob/user)
 	var/dat
@@ -49,7 +48,7 @@
 			dat += "********************************<BR>"
 		dat += "<HR><A href='?src=\ref[src];lock=1'>Lock Console</A>"
 
-	user << browse(dat, "window=computer;size=400x500")
+	user << browse(entity_ja(dat), "window=computer;size=400x500")
 	onclose(user, "computer")
 
 
@@ -83,7 +82,7 @@
 			to_chat(usr, "Unauthorized Access.")
 
 	else if(href_list["warn"])
-		var/warning = sanitize(copytext(input(usr,"Message:","Enter your message here!",""),1,MAX_MESSAGE_LEN))
+		var/warning = sanitize(input(usr,"Message:","Enter your message here!",""))
 		if(!warning) return
 		var/obj/item/weapon/implant/I = locate(href_list["warn"])
 		if((I)&&(I.imp_in))

@@ -34,12 +34,14 @@
 
 	faction = "pirate"
 
+	animalistic = FALSE
+
 /mob/living/simple_animal/hostile/pirate/ranged
 	name = "Pirate Gunner"
 	icon_state = "pirateranged"
 	icon_living = "pirateranged"
 	icon_dead = "piratemelee_dead"
-	projectilesound = 'sound/weapons/laser.ogg'
+	projectilesound = 'sound/weapons/guns/gunpulse_laser.ogg'
 	ranged = 1
 	rapid = 1
 	retreat_distance = 5

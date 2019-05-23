@@ -9,11 +9,11 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "paper"
 	throwforce = 0
-	w_class = 1.0
+	w_class = ITEM_SIZE_TINY
 	throw_range = 1
 	throw_speed = 1
 	layer = 3.9
-	slot_flags = SLOT_HEAD
+	slot_flags = SLOT_FLAGS_HEAD
 	body_parts_covered = HEAD
 	attack_verb = list("bapped")
 
@@ -21,6 +21,7 @@
 	var/info_links	//A different version of the paper which includes html links at fields and EOF
 	var/stamp_text		//The (text for the) stamp_text on the paper.
 	var/fields		//Amount of user created fields
+	var/free_space = MAX_PAPER_MESSAGE_LEN
 	var/list/stamped
 	var/list/ico      //Icons and
 	var/list/offset_x //offsets stored for later
@@ -41,9 +42,9 @@
 	pixel_x = rand(-9, 9)
 	stamp_text = ""
 
-	spawn(2)
-		update_icon()
-		updateinfolinks()
+	update_icon()
+	update_space(info)
+	updateinfolinks()
 
 /obj/item/weapon/paper/update_icon()
 	if(icon_state == "scrap_bloodied")
@@ -52,6 +53,12 @@
 		icon_state = "paper_words"
 		return
 	icon_state = "paper"
+
+/obj/item/weapon/paper/proc/update_space(var/new_text)
+	if(!new_text)
+		return
+
+	free_space -= length(strip_html_properly(new_text))
 
 /obj/item/weapon/paper/examine(mob/user)
 	..()
@@ -69,14 +76,14 @@
 
 	var/data
 	if((!(ishuman(user) || isobserver(user) || issilicon(user)) && !forceshow) || forcestars)
-		data = "<HTML><HEAD><TITLE>[sanitize_popup(name)]</TITLE></HEAD><BODY>[sanitize_plus_popup(stars(revert_ja(info)))][stamp_text]</BODY></HTML>"
+		data = "<HTML><HEAD><TITLE>[sanitize(name)]</TITLE></HEAD><BODY>[stars(info)][stamp_text]</BODY></HTML>"
 		if(view)
-			user << browse(data, "window=[name]")
+			user << browse(entity_ja(data), "window=[name]")
 			onclose(user, "[name]")
 	else
-		data = "<HTML><HEAD><TITLE>[sanitize_popup(name)]</TITLE></HEAD><BODY>[infolinks ? info_links : info][stamp_text]</BODY></HTML>"
+		data = "<HTML><HEAD><TITLE>[sanitize(name)]</TITLE></HEAD><BODY>[infolinks ? info_links : info][stamp_text]</BODY></HTML>"
 		if(view)
-			user << browse(data, "window=[name]")
+			user << browse(entity_ja(data), "window=[name]")
 			onclose(user, "[name]")
 	return data
 
@@ -85,22 +92,27 @@
 	set category = "Object"
 	set src in usr
 
+
 	if((CLUMSY in usr.mutations) && prob(50))
-		to_chat(usr, "<span class='warning'>You cut yourself on the paper.</span>")
+		var/mob/living/carbon/human/H = usr
+		if(istype(H) && !H.species.flags[NO_MINORCUTS])
+			to_chat(usr, "<span class='warning'>You cut yourself on the paper.</span>")
 		return
-	var/n_name = sanitize(copytext(input(usr, "What would you like to label the paper?", "Paper Labelling", null)  as text, 1, MAX_NAME_LEN))
+	var/n_name = sanitize_safe(input(usr, "What would you like to label the paper?", "Paper Labelling", null) as text, MAX_NAME_LEN)
 	if((loc == usr && usr.stat == CONSCIOUS))
 		name = "[(n_name ? text("[n_name]") : "paper")]"
 	add_fingerprint(usr)
-	return
 
 /obj/item/weapon/paper/verb/crumple()
 	set name = "Crump paper"
 	set category = "Object"
 	set src in usr
 
+
 	if((CLUMSY in usr.mutations) && prob(50))
-		to_chat(usr, "<span class='warning'>You cut yourself on the paper.</span>")
+		var/mob/living/carbon/human/H = usr
+		if(istype(H) && !H.species.flags[NO_MINORCUTS])
+			to_chat(usr, "<span class='warning'>You cut yourself on the paper.</span>")
 		return
 	if(!(crumpled==1))
 		crumpled = 1
@@ -114,7 +126,6 @@
 
 	playsound(src, 'sound/items/crumple.ogg', 15, 1, 1)
 	add_fingerprint(usr)
-	return
 
 /obj/item/weapon/paper/afterattack(atom/target, mob/user, proximity)
 	if(!proximity) return
@@ -164,8 +175,10 @@
 	if(def_zone == O_EYES)
 		user.visible_message("<span class='notice'>You show the paper to [M]. </span>", \
 			"<span class='notice'> [user] holds up a paper and shows it to [M]. </span>")
-		to_chat(M, examine())
-
+		if(crumpled == 1)
+			to_chat(M, "<span class='notice'>You can't read anything until it crumpled.</span>")
+			return
+		show_content(M)
 	else if(def_zone == O_MOUTH) // lipstick wiping
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
@@ -230,6 +243,7 @@
 /obj/item/weapon/paper/proc/clearpaper()
 	info = null
 	stamp_text = null
+	free_space = MAX_PAPER_MESSAGE_LEN
 	LAZYCLEARLIST(stamped)
 	LAZYCLEARLIST(ico)
 	LAZYCLEARLIST(offset_x)
@@ -282,6 +296,32 @@
 	t = replacetext(t, "\[/large\]", "</font>")
 	t = replacetext(t, "\[field\]", "<span class=\"paper_field\"></span>")
 
+	// tables
+	t = replacetext(t, "\[table\]", "<table border=3px cellpadding=5px bordercolor=\"black\">")
+	t = replacetext(t, "\[/table\]", "</table>")
+	t = replacetext(t, "\[tr\]", "<tr>")
+	t = replacetext(t, "\[/tr\]", "</tr>")
+	t = replacetext(t, "\[td\]", "<td>")
+	t = replacetext(t, "\[/td\]", "</td>")
+	t = replacetext(t, "\[th\]", "<th>")
+	t = replacetext(t, "\[/th\]", "</th>")
+
+	// standart head
+	t = replacetext(t, "\[h\]", "<h3 style=\"font-family: Arial; text-align:center;\">")
+	t = replacetext(t, "\[/h\]", "</h3>")
+
+	// bordered head;
+	t = replacetext(t, "\[bh\]", "<h3 style=\"border-width: 4px; border-style: solid; font-family: Arial; padding: 10px; text-align:center;\">")
+	t = replacetext(t, "\[/bh\]", "</h3>")
+
+	// blockquote
+	t = replacetext(t, "\[quote\]", "<blockquote style=\"line-height:normal; margin-bottom:10px; font-style:italic; letter-spacing: 1.25px; text-align:right;\">")
+	t = replacetext(t, "\[/quote\]", "</blockquote>")
+
+	// div
+	t = replacetext(t, "\[block\]", "<div style=\"border-width: 4px; border-style: dashed;\">")
+	t = replacetext(t, "\[/block\]", "</div>")
+
 	if(!iscrayon)
 		t = replacetext(t, "\[*\]", "<li>")
 		t = replacetext(t, "\[hr\]", "<HR>")
@@ -306,7 +346,7 @@
 //Count the fields
 	var/laststart = 1
 	while(1)
-		var/i = findtext(t, "<span class=\"paper_field\">", laststart)
+		var/i = findtext(t, "<span class=\"paper_field\">", laststart) //</span>
 		if(i==0)
 			break
 		laststart = i+1
@@ -346,18 +386,20 @@
 		return
 
 	if(P.lit && !user.restrained() && !user.is_busy())
-		var/class = "<span class='red'>"
+		var/class = "red"
 		if(istype(P, /obj/item/weapon/lighter/zippo))
-			class = "<span class='rose'>"
+			class = "rose"
 
-		user.visible_message("[class][user] holds \the [P] up to \the [src], it looks like \he's trying to burn it!</span>", \
-		"[class]You hold \the [P] up to \the [src], burning it slowly.</span>")
+		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like \he's trying to burn it!</span>", \
+		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
 
-		if(do_after(user, 20, TRUE, P, TRUE))
+		icon_state = "paper_onfire"
+		if(P.use_tool(P, user, 20, volume = 50))
 			if((get_dist(src, user) > 1) || !P.lit)
+				update_icon()
 				return
-			user.visible_message("[class][user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
-			"[class]You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+			user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
+			"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
 
 			if(user.get_inactive_hand() == src)
 				user.drop_from_inventory(src)
@@ -366,6 +408,7 @@
 			qdel(src)
 
 		else
+			update_icon()
 			to_chat(user, "<span class='warning'>You must hold \the [P] steady to burn \the [src].</span>")
 
 
@@ -376,9 +419,16 @@
 
 	if(href_list["write"])
 		var/id = href_list["write"]
-		//var/t = strip_html_simple(input(usr, "What text do you wish to add to " + (id=="end" ? "the end of the paper" : "field "+id) + "?", "[name]", null),8192) as message
-		//var/t =  strip_html_simple(input("Enter what you want to write:", "Write", null, null)  as message, MAX_MESSAGE_LEN)
-		var/t =  input("Enter what you want to write:", "Write", null, null)  as message
+
+		if(free_space <= 0)
+			usr << "<span class='info'>There isn't enough space left on \the [src] to write anything.</span>"
+			return
+
+		var/t =  sanitize(input("Enter what you want to write:", "Write", null, null)  as message, free_space, extra = FALSE)
+
+		if(!t)
+			return
+
 		var/obj/item/i = usr.get_active_hand() // Check to see if he still got that darn pen, also check if he's using a crayon or pen.
 		var/iscrayon = 0
 		if(!istype(i, /obj/item/weapon/pen))
@@ -390,34 +440,26 @@
 		if((!in_range(src, usr) && loc != usr && !( istype(loc, /obj/item/weapon/clipboard) ) && loc.loc != usr && usr.get_active_hand() != i)) // Some check to see if he's allowed to write
 			return
 
-		var last_fields_value = fields
+		var/last_fields_value = fields
 
-		t = sanitize_alt(t, list("\n"="\[br\]","ÿ"=LETTER_255))
-
-		// check for exploits
-		for(var/bad in paper_blacklist)
-			if(findtext(t,bad))
-				to_chat(usr, "\blue You think to yourself, \"Hm.. this is only paper...\"")
-				log_admin("PAPER: [usr] ([usr.ckey]) tried to use forbidden word in [src]: [bad].")
-				message_admins("PAPER: [usr] ([usr.ckey]) tried to use forbidden word in [src]: [bad].")
-				return
-
-		//t = replacetext(t, "\n", "<BR>")
+		t = replacetext(t, "\n", "<BR>")
 		t = parsepencode(t, i, usr, iscrayon) // Encode everything from pencode to html
-
-		if(isIAN(usr))
-			t = GibberishAll(t)
 
 		if(fields > 50)
 			to_chat(usr, "<span class='warning'>Too many fields. Sorry, you can't do this.</span>")
 			fields = last_fields_value
 			return
 
+		if(isIAN(usr))
+			t = GibberishAll(t)
+
 		if(id!="end")
 			addtofield(text2num(id), t) // He wants to edit a field, let him.
 		else
 			info += t // Oh, he wants to edit to the end of the file, let him.
 			updateinfolinks()
+
+		update_space(t)
 
 		show_content(usr, forceshow = TRUE, infolinks = TRUE)
 
@@ -445,7 +487,8 @@
 				to_chat(user, "<span class='notice'>Take off the carbon copy first.</span>")
 				add_fingerprint(user)
 				return
-		var/obj/item/weapon/paper_bundle/B = new(src.loc)
+		var/old_loc = loc
+		var/obj/item/weapon/paper_bundle/B = new(loc)
 		if (name != "paper")
 			B.name = name
 		else if (P.name != "paper" && P.name != "photo")
@@ -476,7 +519,7 @@
 			else if (h_user.head == src)
 				h_user.u_equip(src)
 				h_user.put_in_hands(B)
-			else if (!istype(src.loc, /turf))
+			else if (!istype(loc, /turf))
 				src.loc = get_turf(h_user)
 				if(h_user.client)	h_user.client.screen -= src
 				h_user.put_in_hands(B)
@@ -485,6 +528,9 @@
 		P.loc = B
 		B.amount++
 		B.update_icon()
+		if (istype(old_loc, /obj/item/weapon/storage))
+			var/obj/item/weapon/storage/s = old_loc
+			s.update_ui_after_item_removal()
 
 	else if(istype(P, /obj/item/weapon/pen) || istype(P, /obj/item/toy/crayon))
 		if ( istype(P, /obj/item/weapon/pen/robopen) && P:mode == 2 )
@@ -507,6 +553,7 @@
 		var/obj/item/weapon/stamp/S = P
 		S.stamp_paper(src)
 
+		playsound(src, 'sound/effects/stamp.ogg', 50, 1)
 		visible_message("<span class='notice'>[user] stamp the paper.</span>", "<span class='notice'>You stamp the paper with your rubber stamp.</span>")
 
 	else if(istype(P, /obj/item/weapon/lighter))
@@ -581,3 +628,11 @@
 
 	update_icon()
 	updateinfolinks()
+
+/obj/item/weapon/paper/brig_arsenal
+	name = "Armory Inventory"
+	info = "<b>Armory Inventory:</b><ul>6 Deployable Barriers<br>4 Portable Flashers<br>3 Riot Sets:<small><ul><li>Riot Shield<li>Stun Baton<li>Riot Shield<li>Stun Baton</ul></small>3 Marine Sets:<small><ul><li>Marine Jumpsuit<li>Marine Armor<li>Marine Helmet<li>Work Boots<li>Combat Belt<li>Balaclava<li>Tactical Hud<li>Marine Headset<li>Marine Gloves<li>Marine Dufflebag</ul></small>3 Bulletproof Helmets<br>3 Bulletproof Vests<br>3 Ablative Helmets <br>3 Ablative Vests <br>1 Bomb Suit <br>1 Biohazard Suit<br>6 Security Masks<br>3 SIGI p250 Pistols<br>6 Magazines (9mm rubber)</ul><b>Secure Armory Inventory:</b><ul>3 Energy Guns<br>3 Laser Rifles<br>2 Ion Rifles<br>2 L10-c Carbines<br>1 Grenade Launcher<br>1 M79 Grenade Launcher<br>2 Shotguns<br>6 Magazines (9mm)<br>2 Shotgun Shell Boxes (beanbag, 20 shells)<br>1 m79 Grenade Box (40x46 rubber, 7 rounds)<br>1 Chemical Implant Kit<br>1 Tracking Implant Kit<br>1 Mind Shield Implant Kit<br>1 Death Alarm Implant Kit<br>1 Box of Flashbangs<br>2 Boxes of teargas grenades<br>1 Space Security Set:<small><ul><li>Security Hardsuit<li>Security Hardsuit Helmet<li>Magboots<li>Breath Mask</ul></small></ul>"
+
+/obj/item/weapon/paper/firing_range
+	name = "Firing Range Instructions"
+	info = "Directions:<br><i>First you'll want to make sure there is a target stake in the center of the magnetic platform. Next, take an aluminum target from the crates back there and slip it into the stake. Make sure it clicks! Next, there should be a control console mounted on the wall somewhere in the room.<br><br> This control console dictates the behaviors of the magnetic platform, which can move your firing target around to simulate real-world combat situations. From here, you can turn off the magnets or adjust their electromagnetic levels and magnetic fields. The electricity level dictates the strength of the pull - you will usually want this to be the same value as the speed. The magnetic field level dictates how far the magnetic pull reaches.<br><br>Speed and path are the next two settings. Speed is associated with how fast the machine loops through the designated path. Paths dictate where the magnetic field will be centered at what times. There should be a pre-fabricated path input already. You can enable moving to observe how the path affects the way the stake moves. To script your own path, look at the following key:</i><br><br>N: North<br>S: South<br>E: East<br>W: West<br>C: Center<br>R: Random (results may vary)<br>; or &: separators. They are not necessary but can make the path string better visible."

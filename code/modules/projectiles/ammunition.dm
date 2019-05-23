@@ -5,9 +5,9 @@
 	icon = 'icons/obj/ammo.dmi'
 	icon_state = "s-casing"
 	flags = CONDUCT
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_FLAGS_BELT
 	throwforce = 1
-	w_class = 1.0
+	w_class = ITEM_SIZE_TINY
 	var/caliber = null							//Which kind of guns it can be loaded into
 	var/projectile_type = null					//The bullet type to create when New() is called
 	var/obj/item/projectile/BB = null 			//The loaded bullet
@@ -34,11 +34,10 @@
 	return
 
 /obj/item/ammo_casing/attackby(obj/item/weapon/W, mob/user)
-	if(istype(W, /obj/item/weapon/screwdriver))
+	if(isscrewdriver(W))
 		if(BB)
 			if(initial(BB.name) == "bullet")
-				var/tmp_label = ""
-				var/label_text = sanitize(copytext(input(user, "Inscribe some text into \the [initial(BB.name)]","Inscription",tmp_label), 1, MAX_NAME_LEN))
+				var/label_text = sanitize_safe(input(user, "Inscribe some text into \the [initial(BB.name)]","Inscription"), MAX_NAME_LEN)
 				if(length(label_text) > 20)
 					to_chat(user, "\red The inscription can be at most 20 characters long.")
 				else
@@ -62,11 +61,11 @@
 	icon_state = "357"
 	icon = 'icons/obj/ammo.dmi'
 	flags = CONDUCT
-	slot_flags = SLOT_BELT
+	slot_flags = SLOT_FLAGS_BELT
 	item_state = "syringe_kit"
 	m_amt = 500
 	throwforce = 2
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	throw_speed = 4
 	throw_range = 10
 	var/list/stored_ammo = list()

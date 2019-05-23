@@ -38,7 +38,7 @@
 	throw_alert("newlaw")
 	src.laws_sanity_check()
 	src.laws.add_ion_law(law)
-	for(var/mob/living/silicon/robot/R in mob_list)
+	for(var/mob/living/silicon/robot/R in silicon_list)
 		if(R.lawupdate && (R.connected_ai == src))
 			R.throw_alert("newlaw")
 			to_chat(R, "\red " + law + "\red...LAWS UPDATED")
@@ -62,7 +62,7 @@
 /mob/living/silicon/ai/proc/statelaws() // -- TLE
 //	set category = "AI Commands"
 //	set name = "State Laws"
-	/var/prefix = ""
+	var/prefix = ""
 	switch(lawchannel)
 		if("Common") prefix = ";"
 		if("Science") prefix = ":n "
@@ -162,4 +162,4 @@
 	list += {"<br><A href='byond://?src=\ref[src];lawr=1'>Channel: [src.lawchannel]</A><br>"}
 	list += {"<A href='byond://?src=\ref[src];laws=1'>State Laws</A>"}
 
-	usr << browse(list, "window=laws")
+	usr << browse(entity_ja(list), "window=laws")

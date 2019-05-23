@@ -4,8 +4,8 @@ var/list/GPS_list = list()
 	desc = "Helping lost spacemen find their way through the planets since 2016."
 	icon = 'icons/obj/telescience.dmi'
 	icon_state = "gps-c"
-	w_class = 2.0
-	slot_flags = SLOT_BELT
+	w_class = ITEM_SIZE_SMALL
+	slot_flags = SLOT_FLAGS_BELT
 	origin_tech = "programming=2;engineering=2"
 	var/gpstag = "COM0"
 	var/emped = 0
@@ -58,9 +58,8 @@ var/list/GPS_list = list()
 /obj/item/device/gps/Topic(href, href_list)
 	..()
 	if(href_list["tag"] )
-		var/a = input("Please enter desired tag.", name, gpstag) as text
-		a = uppertext(copytext(sanitize(a), 1, 5))
-		if(src.loc == usr)
+		var/a = uppertext(sanitize_safe(input("Please enter desired tag.", name, input_default(gpstag)) as text, 5))
+		if(a && src.loc == usr)
 			gpstag = a
 			name = "global positioning system ([gpstag])"
 			attack_self(usr)

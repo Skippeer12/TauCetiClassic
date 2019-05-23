@@ -53,13 +53,13 @@ var/global/obj/item/device/nuclear_challenge/Challenge
 
 	if(custom_threat == "Yes")
 		declaring_war = TRUE
-		war_declaration = stripped_input(user, "Insert your custom declaration", "Declaration")
+		war_declaration = sanitize(input(user, "Insert your custom declaration", "Declaration"))
 		declaring_war = FALSE
 
 	if(!check_allowed(user) || !war_declaration)
 		return
 	command_alert(war_declaration, "Declaration of War")
-	player_list << sound('sound/machines/Alarm.ogg')
+	send_sound(player_list, 'sound/machines/Alarm.ogg')
 
 	to_chat(user, "You've attracted the attention of powerful forces within the syndicate. \
 	A bonus bundle of telecrystals has been granted to your team. Great things await you if you complete the mission.")

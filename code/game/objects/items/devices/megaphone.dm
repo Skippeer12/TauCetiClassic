@@ -3,7 +3,7 @@
 	desc = "A device used to project your voice. Loudly."
 	icon_state = "megaphone"
 	item_state = "radio"
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	flags = CONDUCT
 
 	action_button_name = "Toggle Megaphone"
@@ -21,17 +21,18 @@
 	if(!ishuman(user))
 		to_chat(user, "\red You don't know how to use this!")
 		return
-	if(user.silent || isabductor(user))
+	if(user.silent || isabductor(user) || user.has_trait(TRAIT_MUTE))
+		to_chat(user, "<span class='userdange'>You can't speak.</span>")
 		return
 	if(spamcheck)
 		to_chat(user, "\red \The [src] needs to recharge!")
 		return
 
 	playsound(src, 'sound/items/megaphone.ogg', 100, 1, 1)
-	var/message = sanitize_plus(copytext(input(user, "Shout a message?", "Megaphone", null)  as text,1,MAX_MESSAGE_LEN))
+	var/message = sanitize(input(user, "Shout a message?", "Megaphone", null)  as text)
 	if(!message)
 		return
-	message = sanitize_plus_chat(capitalize(message))
+	message = (capitalize(message))
 	if ((src.loc == user && usr.stat == CONSCIOUS))
 		if(emagged)
 			if(insults)

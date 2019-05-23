@@ -33,6 +33,8 @@ var/datum/subsystem/ticker/ticker
 	var/list/factions = list()				// list of all factions
 	var/list/availablefactions = list()		// list of factions with openings
 
+	var/list/reconverted_antags = list()
+
 	var/delay_end = 0						//if set to nonzero, the round will not restart on it's own
 
 	var/triai = 0							//Global holder for Triumvirate
@@ -144,6 +146,8 @@ var/datum/subsystem/ticker/ticker
 						send2slack_service("An admin has delayed the round end")
 
 /datum/subsystem/ticker/proc/setup()
+	to_chat(world, "<span class='boldannounce'>Starting game...</span>")
+	var/init_start = world.timeofday
 	//Create and announce mode
 	if(master_mode=="secret" || master_mode=="bs12" || master_mode=="tau classic")
 		hide_mode = 1
@@ -228,8 +232,10 @@ var/datum/subsystem/ticker/ticker
 
 	slack_roundstart()
 
+	world.log << "Game start took [(world.timeofday - init_start)/10]s"
+
 	to_chat(world, "<FONT color='blue'><B>Enjoy the game!</B></FONT>")
-	world << sound('sound/AI/welcome.ogg')
+	send_sound(player_list, 'sound/AI/enjoyyourstay.ogg', 70)
 
 	//Holiday Round-start stuff	~Carn
 	Holiday_Game_Start()
@@ -243,6 +249,9 @@ var/datum/subsystem/ticker/ticker
 				qdel(S)
 
 		SSvote.started_time = world.time
+
+		//Print a list of antagonists to the server log
+		antagonist_announce()
 
 		/*var/admins_number = 0 //For slack maybe?
 		for(var/client/C)
@@ -288,19 +297,19 @@ var/datum/subsystem/ticker/ticker
 				if("nuclear emergency") //Nuke wasn't on station when it blew up
 					flick("intro_nuke",cinematic)
 					sleep(35)
-					world << sound('sound/effects/explosionfar.ogg')
+					send_sound(world, 'sound/effects/explosionfar.ogg')
 					flick("station_intact_fade_red",cinematic)
 					cinematic.icon_state = "summary_nukefail"
 				else
 					flick("intro_nuke",cinematic)
 					sleep(35)
-					world << sound('sound/effects/explosionfar.ogg')
+					send_sound(world, 'sound/effects/explosionfar.ogg')
 					//flick("end",cinematic)
 
 
 		if(2)	//nuke was nowhere nearby	//TODO: a really distant explosion animation
 			sleep(50)
-			world << sound('sound/effects/explosionfar.ogg')
+			send_sound(world, 'sound/effects/explosionfar.ogg')
 		else	//station was destroyed
 			if( mode && !override )
 				override = mode.name
@@ -309,25 +318,25 @@ var/datum/subsystem/ticker/ticker
 					flick("intro_nuke",cinematic)
 					sleep(35)
 					flick("station_explode_fade_red",cinematic)
-					world << sound('sound/effects/explosionfar.ogg')
+					send_sound(world, 'sound/effects/explosionfar.ogg')
 					cinematic.icon_state = "summary_nukewin"
 				if("AI malfunction") //Malf (screen,explosion,summary)
 					flick("intro_malf",cinematic)
 					sleep(76)
 					flick("station_explode_fade_red",cinematic)
-					world << sound('sound/effects/explosionfar.ogg')
+					send_sound(world, 'sound/effects/explosionfar.ogg')
 					cinematic.icon_state = "summary_malf"
 				if("blob") //Station nuked (nuke,explosion,summary)
 					flick("intro_nuke",cinematic)
 					sleep(35)
 					flick("station_explode_fade_red",cinematic)
-					world << sound('sound/effects/explosionfar.ogg')
+					send_sound(world, 'sound/effects/explosionfar.ogg')
 					cinematic.icon_state = "summary_selfdes"
 				else //Station nuked (nuke,explosion,summary)
 					flick("intro_nuke",cinematic)
 					sleep(35)
 					flick("station_explode_fade_red", cinematic)
-					world << sound('sound/effects/explosionfar.ogg')
+					send_sound(world, 'sound/effects/explosionfar.ogg')
 					cinematic.icon_state = "summary_selfdes"
 	//If its actually the end of the round, wait for it to end.
 	//Otherwise if its a verb it will continue on afterwards.
@@ -369,7 +378,8 @@ var/datum/subsystem/ticker/ticker
 				captainless=0
 			if(player.mind.assigned_role != "MODE")
 				SSjob.EquipRank(player, player.mind.assigned_role, 0)
-				EquipCustomItems(player)
+			if(ishuman(player))
+				SSquirks.AssignQuirks(player, player.client, TRUE)
 	if(captainless)
 		for(var/mob/M in player_list)
 			if(!isnewplayer(M))
@@ -419,15 +429,9 @@ var/datum/subsystem/ticker/ticker
 	//Silicon laws report
 	var/ai_completions = "<h1>Round End Information</h1><HR>"
 
-	var/ai_or_borgs_in_round = 0
-	for (var/mob/living/silicon/silicon in mob_list)
-		if(silicon)
-			ai_or_borgs_in_round = 1
-			break
-
-	if(ai_or_borgs_in_round)
+	if(silicon_list.len)
 		ai_completions += "<H3>Silicons Laws</H3>"
-		for (var/mob/living/silicon/ai/aiPlayer in mob_list)
+		for (var/mob/living/silicon/ai/aiPlayer in ai_list)
 			if(!aiPlayer)
 				continue
 			var/icon/flat = getFlatIcon(aiPlayer)
@@ -447,7 +451,7 @@ var/datum/subsystem/ticker/ticker
 
 		var/dronecount = 0
 
-		for (var/mob/living/silicon/robot/robo in mob_list)
+		for (var/mob/living/silicon/robot/robo in silicon_list)
 			if(!robo)
 				continue
 			if(istype(robo,/mob/living/silicon/robot/drone))
@@ -481,21 +485,7 @@ var/datum/subsystem/ticker/ticker
 			ai_completions += "[call(mode, handler)()]"
 
 	//Print a list of antagonists to the server log
-	var/list/total_antagonists = list()
-	//Look into all mobs in world, dead or alive
-	for(var/datum/mind/Mind in minds)
-		var/temprole = Mind.special_role
-		if(temprole)							//if they are an antagonist of some sort.
-			if(temprole in total_antagonists)	//If the role exists already, add the name to it
-				total_antagonists[temprole] += ", [Mind.name]([Mind.key])"
-			else
-				total_antagonists.Add(temprole) //If the role doesnt exist in the list, create it and add the mob
-				total_antagonists[temprole] += ": [Mind.name]([Mind.key])"
-
-	//Now print them all into the log!
-	log_game("Antagonists at round end were...")
-	for(var/i in total_antagonists)
-		log_game("[i]s[total_antagonists[i]].")
+	antagonist_announce()
 
 	if(SSjunkyard)
 		SSjunkyard.save_stats()
@@ -513,6 +503,13 @@ var/datum/subsystem/ticker/ticker
 		text += {"<br><img src="logo_[tempstate].png"> [winner]"}
 
 	return text
+
+/datum/subsystem/ticker/proc/start_now()
+	if(ticker.current_state != GAME_STATE_PREGAME)
+		return FALSE
+	ticker.can_fire = TRUE
+	ticker.timeLeft = 0
+	return TRUE
 
 /world/proc/has_round_started()
 	if (ticker && ticker.current_state >= GAME_STATE_PLAYING)

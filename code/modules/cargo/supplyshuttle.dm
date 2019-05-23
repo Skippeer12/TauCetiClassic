@@ -17,11 +17,13 @@ var/list/mechtoys = list(
 	name = "supply shuttle"
 	icon_state = "shuttle3"
 	requires_power = 0
+	dynamic_lighting = DYNAMIC_LIGHTING_FORCED
 
 /area/supply/dock
 	name = "supply shuttle"
 	icon_state = "shuttle3"
 	requires_power = 0
+	dynamic_lighting = DYNAMIC_LIGHTING_FORCED
 
 //SUPPLY PACKS MOVED TO /code/defines/obj/supplypacks.dm
 
@@ -56,6 +58,8 @@ var/list/mechtoys = list(
 
 	else if(istype(A, /mob/living)) // You Shall Not Pass!
 		var/mob/living/M = A
+		if(M.lying && istype(M, /mob/living/simple_animal/hostile))
+			return 0
 		if(!M.lying && !istype(M, /mob/living/carbon/monkey) && !istype(M, /mob/living/carbon/slime) && !istype(M, /mob/living/simple_animal/mouse) && !istype(M, /mob/living/silicon/robot/drone))  //If your not laying down, or a small creature, no pass.
 			return 0
 	return ..()
@@ -70,6 +74,9 @@ var/list/mechtoys = list(
 		if (3)
 			if (prob(5))
 				qdel(src)
+
+/obj/structure/plasticflaps/explosion_proof/ex_act(severity)
+	return
 
 /obj/structure/plasticflaps/mining //A specific type for mining that doesn't allow airflow because of them damn crates
 	name = "\improper Airtight plastic flaps"

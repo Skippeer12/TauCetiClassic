@@ -455,6 +455,9 @@
 					if(isslime(L) || L.stat == DEAD) // Ignore other slimes and dead mobs
 						continue
 
+					if(L.has_trait(TRAIT_NATURECHILD) && L.naturechild_check())
+						continue
+
 					if(L in Friends) // No eating friends!
 						continue
 
@@ -547,7 +550,7 @@
 	var/to_say
 	if (speech_buffer.len > 0)
 		var/who = speech_buffer[1] // Who said it?
-		var/phrase = lowertext_plus(speech_buffer[2]) // What did they say?
+		var/phrase = lowertext_(speech_buffer[2]) // What did they say?
 		if ((findtext(phrase, num2text(number)) || findtext(phrase, "slime") || findtext(phrase, "слайм") || findtext(phrase, "легион"))) // Talking to us
 			if (                                                                  \
 				findtext(phrase, "hello") || findtext(phrase, "hi") ||            \
@@ -764,6 +767,3 @@
 /mob/living/carbon/slime/proc/get_starve_nutrition() // Below it we will eat before everything else
 	if(isslimeadult(src)) return 300
 	else return 200
-
-/mob/living/carbon/slime/slip()
-	return FALSE

@@ -20,6 +20,8 @@
 		new /obj/item/clothing/mask/bandana/red(src)
 	for (var/i in 1 to 3)
 		new /obj/item/clothing/head/beret/sec(src)
+	for (var/i in 1 to 3)
+		new /obj/item/clothing/head/sec_peakedcap(src)
 	#ifdef NEWYEARCONTENT
 	for (var/i in 1 to 3)
 		new /obj/item/clothing/head/santa(src)
@@ -77,6 +79,7 @@
 	new /obj/item/clothing/under/wedding/bride_white(src)
 	new /obj/item/weapon/storage/backpack/cultpack (src)
 	new /obj/item/weapon/game_kit/chaplain(src)
+	new /obj/item/weapon/reagent_containers/spray/thurible(src)
 	for (var/i in 1 to 2)
 		new /obj/item/weapon/storage/fancy/candle_box(src)
 
@@ -134,8 +137,8 @@
 
 /obj/structure/closet/wardrobe/atmospherics_yellow
 	name = "atmospherics wardrobe"
-	icon_state = "yellow"
-	icon_closed = "yellow"
+	icon_state = "atmos"
+	icon_closed = "atmos"
 
 /obj/structure/closet/wardrobe/atmospherics_yellow/PopulateContents()
 	for (var/i in 1 to 3)
@@ -245,12 +248,14 @@
 
 /obj/structure/closet/wardrobe/chemistry_white
 	name = "chemistry wardrobe"
-	icon_state = "white"
-	icon_closed = "white"
+	icon_state = "orange"
+	icon_closed = "orange"
 
 /obj/structure/closet/wardrobe/chemistry_white/PopulateContents()
 	for (var/i in 1 to 2)
 		new /obj/item/clothing/under/rank/chemist(src)
+	for (var/i in 1 to 2)
+		new /obj/item/clothing/under/rank/chemist/skirt(src)
 	for (var/i in 1 to 2)
 		new /obj/item/clothing/shoes/white(src)
 	for (var/i in 1 to 2)
@@ -265,6 +270,8 @@
 /obj/structure/closet/wardrobe/genetics_white/PopulateContents()
 	for (var/i in 1 to 2)
 		new /obj/item/clothing/under/rank/geneticist(src)
+	for (var/i in 1 to 2)
+		new /obj/item/clothing/under/rank/geneticist/skirt(src)
 	for (var/i in 1 to 2)
 		new /obj/item/clothing/shoes/white(src)
 	for (var/i in 1 to 2)
@@ -286,6 +293,8 @@
 	for (var/i in 1 to 2)
 		new /obj/item/clothing/under/rank/virologist(src)
 	for (var/i in 1 to 2)
+		new /obj/item/clothing/under/rank/virologist/skirt(src)
+	for (var/i in 1 to 2)
 		new /obj/item/clothing/shoes/white(src)
 	for (var/i in 1 to 2)
 		new /obj/item/clothing/suit/storage/labcoat/virologist(src)
@@ -306,6 +315,8 @@
 /obj/structure/closet/wardrobe/medic_white/PopulateContents()
 	for (var/i in 1 to 2)
 		new /obj/item/clothing/under/rank/medical(src)
+	for (var/i in 1 to 2)
+		new /obj/item/clothing/under/rank/medical/skirt(src)
 	new /obj/item/clothing/under/rank/medical/blue(src)
 	new /obj/item/clothing/under/rank/medical/green(src)
 	new /obj/item/clothing/under/rank/medical/purple(src)

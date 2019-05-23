@@ -227,12 +227,13 @@
 
 /obj/effect/proc_holder/spell/targeted/shadowling_hivemind/cast(list/targets)
 	for(var/mob/living/user in targets)
-		var/text = stripped_input(user, "What do you want to say to fellow thralls and shadowlings?.", "Hive Chat", "")
+		var/text = sanitize(input(user, "What do you want to say to fellow thralls and shadowlings?.", "Hive Chat", ""))
 		if(!text)
 			return
+		log_say("Shadowling Hivemind: [key_name(usr)] : [text]")
 		for(var/mob/M in mob_list)
 			if(is_shadow_or_thrall(M) || isobserver(M))
-				to_chat(M, "<span class='shadowling'><b>\[Hive Chat\]</b><i> [usr.real_name]</i>: [sanitize(text)]</span>")
+				to_chat(M, "<span class='shadowling'><b>\[Hive Chat\]</b><i> [usr.real_name]</i>: [text]</span>")
 
 
 
@@ -255,13 +256,13 @@
 			else
 				user.remove_from_mob(I)
 
-		user.equip_to_slot_or_del(new /obj/item/clothing/under/shadowling, slot_w_uniform)
-		user.equip_to_slot_or_del(new /obj/item/clothing/shoes/shadowling, slot_shoes)
-		user.equip_to_slot_or_del(new /obj/item/clothing/suit/space/shadowling, slot_wear_suit)
-		user.equip_to_slot_or_del(new /obj/item/clothing/head/shadowling, slot_head)
-		user.equip_to_slot_or_del(new /obj/item/clothing/gloves/shadowling, slot_gloves)
-		user.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/shadowling, slot_wear_mask)
-		user.equip_to_slot_or_del(new /obj/item/clothing/glasses/night/shadowling, slot_glasses)
+		user.equip_to_slot_or_del(new /obj/item/clothing/under/shadowling, SLOT_W_UNIFORM)
+		user.equip_to_slot_or_del(new /obj/item/clothing/shoes/shadowling, SLOT_SHOES)
+		user.equip_to_slot_or_del(new /obj/item/clothing/suit/space/shadowling, SLOT_WEAR_SUIT)
+		user.equip_to_slot_or_del(new /obj/item/clothing/head/shadowling, SLOT_HEAD)
+		user.equip_to_slot_or_del(new /obj/item/clothing/gloves/shadowling, SLOT_GLOVES)
+		user.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/shadowling, SLOT_WEAR_MASK)
+		user.equip_to_slot_or_del(new /obj/item/clothing/glasses/night/shadowling, SLOT_GLASSES)
 		var/mob/living/carbon/human/H = usr
 		H.set_species(SHADOWLING)
 		H.dna.mutantrace = "shadowling"
@@ -289,7 +290,7 @@
 
 		to_chat(user, "<span class='shadowling'><b>You focus your telepathic energies abound, harnessing and drawing together the strength of your thralls.</b></span>")
 
-		for(M in living_mob_list)
+		for(M in alive_mob_list)
 			if(is_thrall(M))
 				thralls++
 				to_chat(M, "<span class='shadowling'>You feel hooks sink into your mind and pull.</span>")
@@ -311,7 +312,7 @@
 
 		if(thralls >= 7 && !screech_acquired)
 			screech_acquired = 1
-			to_chat(user, "<span class='shadowling'><i>The power of your thralls has granted you the <b>Sonic Screech</b> ability. This ability will shatter nearby windows and deafen enemies, plus stunning silicon lifeforms.</span>")
+			to_chat(user, "<span class='shadowling'><i>The power of your thralls has granted you the <b>Sonic Screech</b> ability. This ability will shatter nearby windows and deafen enemies, plus stunning silicon lifeforms.</i></span>")
 			user.spell_list += new /obj/effect/proc_holder/spell/aoe_turf/unearthly_screech
 
 		if(thralls >= 9 && !reviveThrallAcquired)
@@ -324,9 +325,9 @@
 			to_chat(user, "<span class='shadowling'>You do not have the power to ascend. You require [victory_threshold] thralls, but only [thralls] living thralls are present.</span>")
 
 		else if(thralls >= victory_threshold)
-			to_chat(usr, "<span class='shadowling'><b>You are now powerful enough to ascend. Use the Ascendance ability when you are ready. <i>This will kill all of your thralls.</i></span>")
+			to_chat(usr, "<span class='shadowling'><b>You are now powerful enough to ascend. Use the Ascendance ability when you are ready. <i>This will kill all of your thralls.</i></b></span>")
 			to_chat(usr, "<span class='shadowling'><b>You may find Ascendance in the Shadowling Evolution tab.</b></span>")
-			for(M in living_mob_list)
+			for(M in alive_mob_list)
 				if(is_shadow(M))
 					M.mind.current.verbs -= /mob/living/carbon/human/proc/shadowling_hatch //In case a shadowling hasn't hatched
 					M.mind.current.verbs += /mob/living/carbon/human/proc/shadowling_ascendance
@@ -362,7 +363,7 @@
 		S.set_up(reagents, 10, 0, location, 15, 5)
 		S.start()
 
-datum/reagent/shadowling_blindness_smoke //Blinds non-shadowlings, heals shadowlings/thralls
+/datum/reagent/shadowling_blindness_smoke //Blinds non-shadowlings, heals shadowlings/thralls
 	name = "Odd Black Liquid"
 	id = "blindness_smoke"
 	description = "<::ERROR::> CANNOT ANALYZE REAGENT <::ERROR::>"
@@ -370,23 +371,19 @@ datum/reagent/shadowling_blindness_smoke //Blinds non-shadowlings, heals shadowl
 	//metabolization_rate = 100 //lel
 	custom_metabolism = 100
 
-datum/reagent/shadowling_blindness_smoke/on_mob_life(var/mob/living/M as mob)
-	if(!M) M = holder.my_atom
+/datum/reagent/shadowling_blindness_smoke/on_general_digest(mob/living/M)
+	..()
 	if(!is_shadow_or_thrall(M))
-		to_chat(M, "<span class='warning'><b>You breathe in the black smoke, and your eyes burn horribly!</b></span>")
+		to_chat(M, "<span class='warning bold'>You breathe in the black smoke, and your eyes burn horribly!</span>")
 		M.eye_blind = 5
 		if(prob(25))
 			M.visible_message("<b>[M]</b> claws at their eyes!")
 			M.Stun(3)
 	else
-		to_chat(M, "<span class='notice'><b>You breathe in the black smoke, and you feel revitalized!</b></span>")
+		to_chat(M, "<span class='notice bold'>You breathe in the black smoke, and you feel revitalized!</span>")
 		M.heal_bodypart_damage(2, 2)
 		M.adjustOxyLoss(-2)
 		M.adjustToxLoss(-2)
-	..()
-	return
-
-
 
 /obj/effect/proc_holder/spell/aoe_turf/unearthly_screech
 	name = "Sonic Screech"
@@ -398,7 +395,7 @@ datum/reagent/shadowling_blindness_smoke/on_mob_life(var/mob/living/M as mob)
 
 /obj/effect/proc_holder/spell/aoe_turf/unearthly_screech/cast(list/targets)
 	//usr.audible_message("<span class='warning'><b>[usr] lets out a horrible scream!</b></span>")
-	usr.emote("me",1,"<span class='warning'><b>lets out a horrible scream!</b></span>")
+	usr.emote("scream", 1, "<span class='warning'><b>lets out a horrible scream!</b></span>")
 	playsound(usr.loc, 'sound/effects/screech.ogg', 100, 1)
 
 	for(var/turf/T in targets)
@@ -418,7 +415,7 @@ datum/reagent/shadowling_blindness_smoke/on_mob_life(var/mob/living/M as mob)
 			else if(issilicon(target))
 				var/mob/living/silicon/S = target
 				to_chat(S, "<span class='warning'><b>ERROR $!(@ ERROR )#^! SENSOR OVERLOAD \[$(!@#</b></span>")
-				S << 'sound/misc/interference.ogg'
+				send_sound(S, 'sound/misc/interference.ogg')
 				playsound(S, 'sound/machines/warning-buzzer.ogg', 50, 1)
 				var/datum/effect/effect/system/spark_spread/sp = new /datum/effect/effect/system/spark_spread
 				sp.set_up(5, 1, S)
@@ -487,7 +484,7 @@ datum/reagent/shadowling_blindness_smoke/on_mob_life(var/mob/living/M as mob)
 		var/mob/dead/observer/ghost = thrallToRevive.get_ghost()
 		if(ghost)
 			to_chat(ghost, "<span class='ghostalert'>Your masters are resuscitating you! Return to your corpse if you wish to be brought to life.</span> (Verbs -> Ghost -> Re-enter corpse)")
-			ghost << 'sound/effects/genetics.ogg'
+			send_sound(ghost, 'sound/effects/genetics.ogg')
 		if(!do_mob(usr, thrallToRevive, 100))
 			to_chat(usr, "<span class='warning'>Your concentration snaps. The flow of energy ebbs.</span>")
 			charge_counter= charge_max
@@ -525,7 +522,7 @@ datum/reagent/shadowling_blindness_smoke/on_mob_life(var/mob/living/M as mob)
 
 	for(var/mob/boom in targets)
 		if(is_shadow_or_thrall(boom))
-			to_chat(usr, "<span class='warning'>Making an ally explode seems unwise.<span>")
+			to_chat(usr, "<span class='warning'>Making an ally explode seems unwise.</span>")
 			charge_counter = charge_max
 			return
 		usr.visible_message("<span class='danger'>[usr]'s eyes flare as they gesture at [boom]!</span>", \
@@ -561,7 +558,7 @@ datum/reagent/shadowling_blindness_smoke/on_mob_life(var/mob/living/M as mob)
 
 	for(var/mob/living/carbon/human/target in targets)
 		if(is_shadow_or_thrall(target))
-			to_chat(usr, "<span class='warning'>You cannot enthrall an ally.<span>")
+			to_chat(usr, "<span class='warning'>You cannot enthrall an ally.</span>")
 			charge_counter = charge_max
 			return
 		if(!target.ckey)
@@ -659,7 +656,7 @@ datum/reagent/shadowling_blindness_smoke/on_mob_life(var/mob/living/M as mob)
 
 /obj/effect/proc_holder/spell/targeted/shadowling_hivemind_ascendant/cast(list/targets)
 	for(var/mob/living/user in targets)
-		var/text = stripped_input(user, "What do you want to say to fellow thralls and shadowlings?.", "Hive Chat", "")
+		var/text = sanitize(input(user, "What do you want to say to fellow thralls and shadowlings?.", "Hive Chat", ""))
 		if(!text)
 			return
 		for(var/mob/M in mob_list)
@@ -679,7 +676,7 @@ datum/reagent/shadowling_blindness_smoke/on_mob_life(var/mob/living/M as mob)
 
 /obj/effect/proc_holder/spell/targeted/shadowlingAscendantTransmit/cast(list/targets)
 	for(var/mob/living/user in targets)
-		var/text = stripped_input(user, "What do you want to say to everything on and near [world.name]?.", "Transmit to World", "")
+		var/text = sanitize(input(user, "What do you want to say to everything on and near [world.name]?.", "Transmit to World", ""))
 		if(!text)
 			return
-		to_chat(world, "<font size=4><span class='shadowling'><b>\"[sanitize(text)]\"</font></span>")
+		to_chat(world, "<font size=4><span class='shadowling'><b>\"[sanitize(text)]\"</b></font></span>")

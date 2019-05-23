@@ -5,7 +5,7 @@
 	icon_state = "gangtool"
 	item_state = "walkietalkie"
 	throwforce = 0
-	w_class = 1.0
+	w_class = ITEM_SIZE_TINY
 	throw_speed = 3
 	throw_range = 7
 	flags = CONDUCT
@@ -274,7 +274,7 @@
 /obj/item/device/gangtool/proc/ping_gang(mob/user)
 	if(!user)
 		return
-	var/message = stripped_input(user,"Discreetly send a gang-wide message.","Send Message") as null|text
+	var/message = sanitize(input(user,"Discreetly send a gang-wide message.","Send Message") as null|text)
 	if(!message || (message == "") || !can_use(user))
 		return
 	if(user.z > ZLEVEL_CENTCOMM)

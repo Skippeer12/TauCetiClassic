@@ -9,21 +9,24 @@
 	speak_emote = list("chirrups")
 	icon_state = "nymph1"
 	hazard_low_pressure = DIONA_HAZARD_LOW_PRESSURE
-	blood_color = "#004400"
 	var/list/donors = list()
 	var/ready_evolve = 0
 	var/mob/living/carbon/human/gestalt = null
 	var/allowedinjecting = list("nutriment",
-                                "ryetalyn",
-                                "kelotane",
-                                "hyronalin",
-                                "alkysine",
-                                "imidazoline"
+                                "orangejuice",
+                                "tomatojuice",
+                                "limejuice",
+                                "carrotjuice",
+                                "milk",
+                                "coffee"
                                )
+	race = DIONA
 	var/datum/reagent/injecting = null
-	universal_understand = 0 // Dionaea do not need to speak to people
-	universal_speak = 0      // before becoming an adult. Use *chirp.
+	universal_understand = FALSE // Dionaea do not need to speak to people
+	universal_speak = FALSE      // before becoming an adult. Use *chirp.
 	holder_type = /obj/item/weapon/holder/diona
+	blood_datum = /datum/dirt_cover/green_blood
+
 
 /mob/living/carbon/monkey/diona/attack_hand(mob/living/carbon/human/M)
 
@@ -138,7 +141,7 @@
 	to_chat(src, "<span class='notice'>It would seem you have passed on [L.name] onto [gestalt] succesfully.</span>")
 	to_chat(gestalt, "<span class='notice'>It would seem you have acquired knowledge of [L.name]!</span>")
 	if(prob(50))
-		to_chat(src, "<span class='warning'>You momentarily forget [L.name]. Is this how memory wiping feels?</span")
+		to_chat(src, "<span class='warning'>You momentarily forget [L.name]. Is this how memory wiping feels?</span>")
 		remove_language(L.name)
 
 /mob/living/carbon/monkey/diona/verb/synthesize()

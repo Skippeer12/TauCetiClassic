@@ -58,7 +58,8 @@ var/global/list/autolathe_recipes = list( \
 		new /obj/item/weapon/hand_labeler(), \
 		new /obj/item/device/destTagger(), \
 		new /obj/item/weapon/game_kit/random(), \
-		new /obj/item/newscaster_frame(), \
+		new /obj/item/newscaster_frame(),
+		new /obj/item/device/tabletop_assistant()
 	)
 
 var/global/list/autolathe_recipes_hidden = list( \
@@ -74,6 +75,7 @@ var/global/list/autolathe_recipes_hidden = list( \
 		new /obj/item/ammo_casing/shotgun/dart(), \
 		new /obj/item/ammo_casing/shotgun/buckshot(), \
 		new /obj/item/device/harmonica(), \
+		new /obj/item/weapon/bell()
 	)
 
 /obj/machinery/autolathe
@@ -175,7 +177,7 @@ var/global/list/autolathe_recipes_hidden = list( \
 			dat += "<A href='?src=\ref[src];make=\ref[t]'>[title]</A>"
 		dat += "<br>"
 
-	user << browse("<HTML><HEAD><TITLE>Autolathe Control Panel</TITLE></HEAD><BODY><TT>[dat]</TT></BODY></HTML>", "window=autolathe_regular")
+	user << browse("<HTML><HEAD><TITLE>Autolathe Control Panel</TITLE></HEAD><BODY><TT>[entity_ja(dat)]</TT></BODY></HTML>", "window=autolathe_regular")
 	onclose(user, "autolathe_regular")
 
 /obj/machinery/autolathe/proc/shock(mob/user, prb)
@@ -212,7 +214,7 @@ var/global/list/autolathe_recipes_hidden = list( \
 		return
 
 	if (panel_open)
-		if(istype(I, /obj/item/weapon/crowbar))
+		if(iscrowbar(I))
 			if(m_amount >= 3750)
 				new /obj/item/stack/sheet/metal(loc, round(m_amount / 3750))
 			if(g_amount >= 3750)

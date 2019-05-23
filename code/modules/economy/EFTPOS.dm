@@ -3,6 +3,7 @@
 	desc = "Swipe your ID card to make purchases electronically."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "eftpos"
+	hitsound = 'sound/items/defib_safetyOff.ogg'
 	var/machine_id = ""
 	var/eftpos_name = "Default EFTPOS scanner"
 	var/transaction_locked = 0
@@ -45,6 +46,7 @@
 	R.info += "3. Give the EFTPOS device to your customer, he/she must finish the transaction by swiping their ID card or a charge card with enough funds.<br>"
 	R.info += "4. If everything is done correctly, the money will be transferred. To unlock the device you will have to reset the EFTPOS device.<br>"
 
+	R.update_icon()
 
 	//stamp the paper
 	var/obj/item/weapon/stamp/centcomm/S = new
@@ -60,6 +62,8 @@
 	R.info = "<b>[eftpos_name] reference</b><br><br>"
 	R.info += "Access code: [access_code]<br><br>"
 	R.info += "<b>Do not lose or misplace this code.</b><br>"
+
+	R.update_icon()
 
 	//stamp the paper
 	var/obj/item/weapon/stamp/centcomm/S = new
@@ -94,7 +98,7 @@
 			dat += "<a href='?src=\ref[src];choice=change_code'>Change access code</a><br>"
 			dat += "<a href='?src=\ref[src];choice=change_id'>Change EFTPOS ID</a><br>"
 			dat += "Scan card to reset access code <a href='?src=\ref[src];choice=reset'>\[------\]</a>"
-		user << browse(dat,"window=eftpos")
+		user << browse(entity_ja(dat),"window=eftpos")
 	else
 		user << browse(null,"window=eftpos")
 
@@ -155,7 +159,7 @@
 			if("change_id")
 				var/attempt_code = text2num(input("Re-enter the current EFTPOS access code", "Confirm EFTPOS code"))
 				if(attempt_code == access_code)
-					eftpos_name = input("Enter a new terminal ID for this device", "Enter new EFTPOS ID") + " EFTPOS scanner"
+					eftpos_name = sanitize_safe(input("Enter a new terminal ID for this device", "Enter new EFTPOS ID"), MAX_LNAME_LEN) + " EFTPOS scanner"
 					print_reference()
 				else
 					to_chat(usr, "[bicon(src)]<span class='warning'>Incorrect code entered.</span>")
@@ -167,7 +171,7 @@
 					linked_account = null
 					to_chat(usr, "[bicon(src)]<span class='warning'>Account has been suspended.</span>")
 			if("trans_purpose")
-				transaction_purpose = input("Enter reason for EFTPOS transaction", "Transaction purpose")
+				transaction_purpose = sanitize(input("Enter reason for EFTPOS transaction", "Transaction purpose"))
 			if("trans_value")
 				var/try_num = input("Enter amount for EFTPOS transaction", "Transaction amount") as num
 				if(try_num < 0)

@@ -5,6 +5,7 @@
 	icon = 'icons/obj/computer.dmi'
 	icon_state = "aiupload"
 	density = 1
+	anchored = TRUE
 	req_one_access = list(access_hop, access_captain, access_cent_captain)
 	allowed_checks = ALLOWED_CHECK_NONE
 	var/receipt_num
@@ -266,4 +267,5 @@
 					"}
 
 				P.info = text
+				P.update_icon()
 				state("The terminal prints out a report.")

@@ -4,7 +4,7 @@
 	endWhen = 95
 
 /datum/event/anomaly/anomaly_bluespace/announce()
-	command_alert("Unstable bluespace anomaly detected on long range scanners. Expected location: [impact_area.name].", "Anomaly Alert")
+	command_alert("Unstable bluespace anomaly detected on long range scanners. Expected location: [impact_area.name].", "Anomaly Alert", sound = "bluspaceanom")
 
 /datum/event/anomaly/anomaly_bluespace/start()
 	var/turf/T = pick(get_area_turfs(impact_area))
@@ -18,7 +18,7 @@
 				// Calculate new position (searches through beacons in world)
 			var/obj/item/device/radio/beacon/chosen
 			var/list/possible = list()
-			for(var/obj/item/device/radio/beacon/W in world)
+			for(var/obj/item/device/radio/beacon/W in radio_beacon_list)
 				possible += W
 
 			if(possible.len > 0)

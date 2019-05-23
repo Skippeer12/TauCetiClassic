@@ -1,7 +1,7 @@
 /mob/Destroy()//This makes sure that mobs with clients/keys are not just deleted from the game.
 	mob_list -= src
 	dead_mob_list -= src
-	living_mob_list -= src
+	alive_mob_list -= src
 	ghostize(bancheck = TRUE)
 	return ..()
 
@@ -12,7 +12,7 @@
 	if(stat == DEAD)
 		dead_mob_list += src
 	else
-		living_mob_list += src
+		alive_mob_list += src
 	. = ..()
 
 /mob/proc/Cell()
@@ -151,25 +151,11 @@
 
 
 /mob/proc/show_inv(mob/user)
-	user.set_machine(src)
-	var/dat = {"
-	<B><HR><FONT size=3>[name]</FONT></B>
-	<BR><HR>
-	<BR><B>Head(Mask):</B> <A href='?src=\ref[src];item=mask'>[(wear_mask ? wear_mask : "Nothing")]</A>
-	<BR><B>Left Hand:</B> <A href='?src=\ref[src];item=l_hand'>[(l_hand&&!(l_hand.flags&ABSTRACT)) 	? l_hand	: "Nothing"]</A>
-	<BR><B>Right Hand:</B> <A href='?src=\ref[src];item=r_hand'>[(r_hand&&!(r_hand.flags&ABSTRACT))		? r_hand	: "Nothing"]</A>
-	<BR><B>Back:</B> <A href='?src=\ref[src];item=back'>[(back ? back : "Nothing")]</A> [((istype(wear_mask, /obj/item/clothing/mask) && istype(back, /obj/item/weapon/tank) && !( internal )) ? text(" <A href='?src=\ref[];item=internal'>Set Internal</A>", src) : "")]
-	<BR>[(internal ? text("<A href='?src=\ref[src];item=internal'>Remove Internal</A>") : "")]
-	<BR><A href='?src=\ref[src];item=pockets'>Empty Pockets</A>
-	<BR><A href='?src=\ref[user];refresh=1'>Refresh</A>
-	<BR><A href='?src=\ref[user];mach_close=mob[name]'>Close</A>
-	<BR>"}
-	user << browse(dat, text("window=mob[];size=325x500", name))
-	onclose(user, "mob[name]")
 	return
 
 /mob/proc/ret_grab(obj/effect/list_container/mobl/L, flag)
-	if(!(istype(l_hand, /obj/item/weapon/grab) || istype(r_hand, /obj/item/weapon/grab)))
+	var/list/grabs = GetGrabs()
+	if(!LAZYLEN(grabs))
 		if(!L)
 			return null
 		else
@@ -179,17 +165,10 @@
 			L = new /obj/effect/list_container/mobl(null)
 			L.container += src
 			L.master = src
-		if(istype(l_hand, /obj/item/weapon/grab))
-			var/obj/item/weapon/grab/G = l_hand
+		for(var/obj/item/weapon/grab/G in grabs)
 			if(!L.container.Find(G.affecting))
 				L.container += G.affecting
 				if (G.affecting)
-					G.affecting.ret_grab(L, 1)
-		if(istype(r_hand, /obj/item/weapon/grab))
-			var/obj/item/weapon/grab/G = r_hand
-			if(!L.container.Find(G.affecting))
-				L.container += G.affecting
-				if(G.affecting)
 					G.affecting.ret_grab(L, 1)
 		if(!flag)
 			if(L.master == src)
@@ -247,19 +226,15 @@
 	set name = "Add Note"
 	set category = "IC"
 
-	msg = copytext(msg, 1, MAX_MESSAGE_LEN)
 	msg = sanitize(msg)
 
-	if(mind)
+	if(msg && mind)
 		mind.store_memory(msg)
 	else
 		to_chat(src, "The game appears to have misplaced your mind datum, so we can't show you your notes.")
 
-/mob/proc/store_memory(msg, popup, sane = 1)
-	msg = copytext(msg, 1, MAX_MESSAGE_LEN)
-
-	if(sane)
-		msg = sanitize_alt(msg)
+/mob/proc/store_memory(msg, popup)
+	msg = sanitize(msg)
 
 	if(length(memory) == 0)
 		memory += msg
@@ -273,12 +248,9 @@
 	set src in usr
 	if(usr != src)
 		to_chat(usr, "No.")
-	var/msg = input(usr,"Set the flavor text in your 'examine' verb. Can also be used for OOC notes about your character.","Flavor Text",html_decode(flavor_text)) as message|null
+	var/msg = sanitize(input(usr,"Set the flavor text in your 'examine' verb. Can also be used for OOC notes about your character.","Flavor Text",input_default(flavor_text)) as message|null)
 
-	if(msg != null)
-		msg = copytext(msg, 1, MAX_MESSAGE_LEN)
-		msg = html_encode(msg)
-
+	if(msg)
 		flavor_text = msg
 
 /mob/proc/warn_flavor_changed()
@@ -328,6 +300,7 @@
 	var/obj/P = new /obj/effect/decal/point(tile)
 	P.pixel_x = A.pixel_x
 	P.pixel_y = A.pixel_y
+	P.plane = GAME_PLANE
 
 	QDEL_IN(P, 20)
 
@@ -462,9 +435,14 @@
 		unset_machine()
 		src << browse(null, t1)
 
+	if (href_list["refresh"])
+		if(machine && in_range(src, usr))
+			show_inv(machine)
+
 	if(href_list["flavor_more"])
-		usr << browse(text("<HTML><HEAD><TITLE>[]</TITLE></HEAD><BODY><TT>[]</TT></BODY></HTML>", name, sanitize_popup(replacetext(flavor_text, "\n", "<BR>"))), text("window=[];size=500x200", name))
+		usr << browse(text("<HTML><HEAD><TITLE>[]</TITLE></HEAD><BODY><TT>[]</TT></BODY></HTML>", name, entity_ja(flavor_text)), text("window=[];size=500x200", name))
 		onclose(usr, "[name]")
+
 	if(href_list["flavor_change"])
 		update_flavor_text()
 //	..()
@@ -657,12 +635,12 @@ note dizziness decrements automatically in the mob's Life() proc.
 					if(GM.malf_mode_declared)
 						stat(null, "Time left: [max(GM.AI_win_timeleft / (GM.apcs / APC_MIN_TO_MALF_DECLARE), 0)]")
 				if(SSshuttle.online && SSshuttle.location < 2)
-					var/timeleft = SSshuttle.timeleft()
-					if(timeleft)
-						stat(null, "ETA-[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]")
+					stat(null, "ETA-[shuttleeta2text()]")
 
 	if(client && client.holder)
-		if((client.holder.rights & R_ADMIN))
+		if(statpanel("Tickets"))
+			global.ahelp_tickets.stat_entry()
+		if(client.holder.rights & R_ADMIN)
 			if(statpanel("MC"))
 				stat("CPU:", "[world.cpu]")
 				if(client.holder.rights & R_DEBUG)
@@ -944,7 +922,7 @@ note dizziness decrements automatically in the mob's Life() proc.
 			visible_implants += O
 	return visible_implants
 
-mob/proc/yank_out_object()
+/mob/proc/yank_out_object()
 	set category = "Object"
 	set name = "Yank out object"
 	set desc = "Remove an embedded item at the cost of bleeding and pain."
@@ -1034,7 +1012,7 @@ mob/proc/yank_out_object()
 
 /mob/proc/get_ghost(even_if_they_cant_reenter = 0)
 	if(mind)
-		for(var/mob/dead/observer/G in dead_mob_list)
+		for(var/mob/dead/observer/G in observer_list)
 			if(G.mind == mind)
 				if(G.can_reenter_corpse || even_if_they_cant_reenter)
 					return G

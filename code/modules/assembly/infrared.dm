@@ -81,12 +81,11 @@
 	..()
 	return
 
-/obj/item/device/assembly/infra/Move()
+/obj/item/device/assembly/infra/Move(NewLoc, Dir = 0, step_x = 0, step_y = 0)
 	var/t = dir
-	..()
+	. = ..()
 	dir = t
 	qdel(first)
-	return
 
 /obj/item/device/assembly/infra/holder_movement()
 	if(!holder)
@@ -117,7 +116,7 @@
 		var/dat = "<TT><B>Infrared Laser</B>\n<B>Status</B>: [on ? "<A href='?src=\ref[src];state=0'>On</A>" : "<A href='?src=\ref[src];state=1'>Off</A>"]<BR>\n<B>Visibility</B>: [visible ? "<A href='?src=\ref[src];visible=0'>Visible</A>" : "<A href='?src=\ref[src];visible=1'>Invisible</A>"]<BR>\n</TT>"
 		dat += "<BR><BR><A href='?src=\ref[src];refresh=1'>Refresh</A>"
 		dat += "<BR><BR><A href='?src=\ref[src];close=1'>Close</A>"
-		user << browse(dat, "window=infra")
+		user << browse(entity_ja(dat), "window=infra")
 		onclose(user, "infra")
 		return
 

@@ -2,37 +2,37 @@
 
 /area/jungle/temple_one
 	name = "temple"
-	dynamic_lighting = 1
+	dynamic_lighting = DYNAMIC_LIGHTING_ENABLED
 	icon = 'code/modules/jungle/jungle.dmi'
 	icon_state = "temple1"
 
 /area/jungle/temple_two
 	name = "temple"
-	dynamic_lighting = 1
+	dynamic_lighting = DYNAMIC_LIGHTING_ENABLED
 	icon = 'code/modules/jungle/jungle.dmi'
 	icon_state = "temple2"
 
 /area/jungle/temple_three
 	name = "temple"
-	dynamic_lighting = 1
+	dynamic_lighting = DYNAMIC_LIGHTING_ENABLED
 	icon = 'code/modules/jungle/jungle.dmi'
 	icon_state = "temple3"
 
 /area/jungle/temple_four
 	name = "temple"
-	dynamic_lighting = 1
+	dynamic_lighting = DYNAMIC_LIGHTING_ENABLED
 	icon = 'code/modules/jungle/jungle.dmi'
 	icon_state = "temple4"
 
 /area/jungle/temple_five
 	name = "temple"
-	dynamic_lighting = 1
+	dynamic_lighting = DYNAMIC_LIGHTING_ENABLED
 	icon = 'code/modules/jungle/jungle.dmi'
 	icon_state = "temple5"
 
 /area/jungle/temple_six
 	name = "temple"
-	dynamic_lighting = 1
+	dynamic_lighting = DYNAMIC_LIGHTING_ENABLED
 	icon = 'code/modules/jungle/jungle.dmi'
 	icon_state = "temple6"
 
@@ -235,7 +235,7 @@
 			var/obj/structure/closet/crate/secure/gear/C = new(src.loc)
 			var/num = rand(2,6)
 			for(var/i=0,i<num,i++)
-				var/spawn_type = pick(/obj/item/device/flashlight/flare, /obj/item/trash/candle, /obj/item/candle/, /obj/item/weapon/storage/box/matches)
+				var/spawn_type = pick(/obj/item/device/flashlight/flare, /obj/item/trash/candle, /obj/item/candle, /obj/item/weapon/storage/box/matches)
 				new spawn_type(C)
 		if("engineering")
 			var/obj/structure/closet/crate/secure/gear/C = new(src.loc)

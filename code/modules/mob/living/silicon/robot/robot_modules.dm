@@ -2,7 +2,7 @@
 	name = "robot module"
 	icon = 'icons/obj/module.dmi'
 	icon_state = "std_module"
-	w_class = 100.0
+	w_class = ITEM_SIZE_NO_CONTAINER
 	item_state = "electronic"
 	flags = CONDUCT
 	var/channels = list()
@@ -64,6 +64,7 @@
 
 /obj/item/weapon/robot_module/proc/add_languages(mob/living/silicon/robot/R)
 	R.add_language("Tradeband", 1)
+	R.add_language("Trinary", 1)
 	R.add_language("Sol Common", 1)
 
 /obj/item/weapon/robot_module/standard
@@ -140,9 +141,9 @@
 	modules += new /obj/item/borg/sight/hud/med(src)
 	modules += new /obj/item/device/reagent_scanner/adv(src)
 	modules += new /obj/item/roller_holder(src)
-	modules += new /obj/item/stack/medical/ointment(src)
-	modules += new /obj/item/stack/medical/bruise_pack(src)
-	modules += new /obj/item/stack/medical/splint(src)
+	modules += new /obj/item/stack/medical/ointment(src, 25)
+	modules += new /obj/item/stack/medical/bruise_pack(src, 25)
+	modules += new /obj/item/stack/medical/splint(src, 10)
 	modules += new /obj/item/weapon/reagent_containers/borghypo/crisis(src)
 	modules += new /obj/item/weapon/reagent_containers/glass/beaker/large(src)
 	modules += new /obj/item/weapon/reagent_containers/robodropper(src)
@@ -299,6 +300,7 @@
 	R.add_language("Skrellian", 1)
 	R.add_language("Rootspeak", 1)
 	R.add_language("Tradeband", 1)
+	R.add_language("Trinary", 1)
 	R.add_language("Gutter", 1)
 
 /obj/item/weapon/robot_module/butler/respawn_consumable(mob/living/silicon/robot/R)
